@@ -1,4 +1,4 @@
-const console = @import("console.zig");
+const mmu = @import("mmu.zig");
 
 const MultibootHeader = packed struct {
     magic: u32, // Must be equal to header magic number.
@@ -19,16 +19,48 @@ export const multiboot_header align(4) linksection(".multiboot") = multiboot: {
     };
 };
 
-export var stack_bytes: [16 * 1024]u8 align(16) linksection(".bss") = undefined;
-const stack_bytes_slice = stack_bytes[0..];
+export const KSTACKSIZE = 4096;
 
-export fn _start() callconv(.Naked) noreturn {
-    @call(.{ .stack = stack_bytes_slice }, kmain, .{});
-
-    while (true) {}
+comptime {
+    asm (
+        \\.globl _start
+        \\_start = start - 0x80000000
+    );
 }
 
-fn kmain() void {
-    console.initialize();
-    console.puts("Hello world!");
+export fn start() align(16) callconv(.Naked) noreturn {
+    asm volatile (
+        // Turn on page size extension for 4Mbyte pages
+        \\movl %%cr4, %%eax
+        \\orl %[value], %%eax
+        \\movl %%eax, %%cr4
+        :
+        : [value] "ecx" (mmu.CR4_PSE),
+    );
+    asm volatile(
+        // Set page directory
+        \\movl $(entrypgdir - 0x80000000), %%eax
+        \\movl %%eax, %%cr3
+    );
+    asm volatile (
+        // Turn on paging
+        \\movl %%cr0, %%eax
+        \\orl %[value], %%eax
+        \\movl %%eax, %%cr0
+        :
+        : [value] "ecs" (mmu.CR0_PG | mmu.CR0_WP),
+    );
+    asm volatile(
+        // Set up the stack pointer
+        \\# movl $(stack + KSTACKSIZE), %%esp
+
+        // Jump to main(), and switch to executing at
+        // high addresses. The indirect call is needed because
+        // the assembler produces a PC-relative instruction
+        // for a direct jump.
+        \\mov $main, %%eax
+        \\jmp *%%eax
+        \\# .comm stack, KSTACKSIZE
+    );
+    while (true) {}
 }

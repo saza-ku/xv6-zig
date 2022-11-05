@@ -1,0 +1,1 @@
+pub const KERNBASE = 0x80000000;

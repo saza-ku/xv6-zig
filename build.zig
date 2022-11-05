@@ -4,6 +4,8 @@ const Target = @import("std").Target;
 const CrossTarget = @import("std").zig.CrossTarget;
 const Feature = @import("std").Target.Cpu.Feature;
 
+const objFiles = [_][]u8{"main"};
+
 pub fn build(b: *Builder) void {
     const target = CrossTarget{
         .cpu_arch = Target.Cpu.Arch.i386,
@@ -12,10 +14,16 @@ pub fn build(b: *Builder) void {
 
     const mode = b.standardReleaseOptions();
 
+    // objects for assembly
+    const main_obj = b.addObject("main", "src/main.zig");
+    main_obj.setTarget(target);
+    main_obj.setBuildMode(mode);
+
     const kernel = b.addExecutable("kernel.elf", "src/entry.zig");
     kernel.setTarget(target);
     kernel.setBuildMode(mode);
     kernel.setLinkerScriptPath(.{ .path = "src/kernel.ld" });
+    kernel.addObject(main_obj);
     kernel.code_model = .kernel;
     kernel.install();
 
@@ -37,7 +45,7 @@ pub fn build(b: *Builder) void {
     iso_step.dependOn(&iso_cmd.step);
     b.default_step.dependOn(iso_step);
 
-    const run_cmd_str = &[_][]const u8{ "qemu-system-x86_64", "-cdrom", iso_path, "-debugcon", "stdio", "-vga", "virtio", "-m", "4G", "-machine", "q35,accel=kvm:whpx:tcg", "-no-reboot", "-no-shutdown" };
+    const run_cmd_str = &[_][]const u8{ "qemu-system-x86_64", "-cdrom", iso_path, "-debugcon", "stdio", "-vga", "virtio", "-m", "4G" };
 
     const run_cmd = b.addSystemCommand(run_cmd_str);
     run_cmd.step.dependOn(b.getInstallStep());

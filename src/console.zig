@@ -28,7 +28,7 @@ pub const ConsoleColors = enum(u8) {
 var row: usize = 0;
 var column: usize = 0;
 var color = vgaEntryColor(ConsoleColors.LightGray, ConsoleColors.Black);
-var buffer = @intToPtr([*]volatile u16, 0xB8000);
+var buffer = @intToPtr([*]volatile u16, 0xB8000 | 0x80000000);
 
 fn vgaEntryColor(fg: ConsoleColors, bg: ConsoleColors) u8 {
     return @enumToInt(fg) | (@enumToInt(bg) << 4);
