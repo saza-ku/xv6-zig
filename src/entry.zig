@@ -1,4 +1,5 @@
 const mmu = @import("mmu.zig");
+const param = @import("param.zig");
 
 const MultibootHeader = packed struct {
     magic: u32, // Must be equal to header magic number.
@@ -19,12 +20,11 @@ export const multiboot_header align(4) linksection(".multiboot") = multiboot: {
     };
 };
 
-export const KSTACKSIZE = 4096;
-
 comptime {
     asm (
         \\.globl _start
         \\_start = start - 0x80000000
+        \\.comm stack, 4096 // KSTACKSIZE
     );
 }
 
@@ -32,10 +32,10 @@ export fn start() align(16) callconv(.Naked) noreturn {
     asm volatile (
         // Turn on page size extension for 4Mbyte pages
         \\movl %%cr4, %%eax
-        \\orl %[value], %%eax
+        \\orl %[cr4_pse], %%eax
         \\movl %%eax, %%cr4
         :
-        : [value] "ecx" (mmu.CR4_PSE),
+        : [cr4_pse] "ecx" (mmu.CR4_PSE),
     );
     asm volatile(
         // Set page directory
@@ -45,14 +45,16 @@ export fn start() align(16) callconv(.Naked) noreturn {
     asm volatile (
         // Turn on paging
         \\movl %%cr0, %%eax
-        \\orl %[value], %%eax
+        \\orl %[cr0_bits], %%eax
         \\movl %%eax, %%cr0
         :
-        : [value] "ecs" (mmu.CR0_PG | mmu.CR0_WP),
+        : [cr0_bits] "ecs" (mmu.CR0_PG | mmu.CR0_WP),
     );
     asm volatile(
         // Set up the stack pointer
-        \\# movl $(stack + KSTACKSIZE), %%esp
+        \\movl $stack, %%eax
+        \\addl %[kstacksize], %%eax
+        \\movl %%eax, %%esp
 
         // Jump to main(), and switch to executing at
         // high addresses. The indirect call is needed because
@@ -60,7 +62,8 @@ export fn start() align(16) callconv(.Naked) noreturn {
         // for a direct jump.
         \\mov $main, %%eax
         \\jmp *%%eax
-        \\# .comm stack, KSTACKSIZE
+        :
+        : [kstacksize] "ecx" (param.KSTACKSIZE),
     );
     while (true) {}
 }

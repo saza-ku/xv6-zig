@@ -1,1 +1,1 @@
-pub const KSTACKSIZE = 4096;
+pub const KSTACKSIZE: usize = 4096;
