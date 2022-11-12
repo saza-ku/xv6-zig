@@ -8,7 +8,7 @@ const objFiles = [_][]u8{"main"};
 
 pub fn build(b: *Builder) void {
     const target = CrossTarget{
-        .cpu_arch = Target.Cpu.Arch.i386,
+        .cpu_arch = Target.Cpu.Arch.x86,
         .os_tag = Target.Os.Tag.freestanding,
     };
 

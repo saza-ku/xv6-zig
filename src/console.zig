@@ -1,6 +1,8 @@
+const std = @import("std");
 const fmt = @import("std").fmt;
 const mem = @import("std").mem;
 const Writer = @import("std").io.Writer;
+const memlayout = @import("memlayout.zig");
 
 const VGA_WIDTH = 80;
 const VGA_HEIGHT = 25;
@@ -28,7 +30,7 @@ pub const ConsoleColors = enum(u8) {
 var row: usize = 0;
 var column: usize = 0;
 var color = vgaEntryColor(ConsoleColors.LightGray, ConsoleColors.Black);
-var buffer = @intToPtr([*]volatile u16, 0xB8000 | 0x80000000);
+var buffer = @intToPtr([*]u16, memlayout.p2v(0xB8000));
 
 fn vgaEntryColor(fg: ConsoleColors, bg: ConsoleColors) u8 {
     return @enumToInt(fg) | (@enumToInt(bg) << 4);
@@ -81,5 +83,9 @@ fn callback(_: void, string: []const u8) error{}!usize {
 }
 
 pub fn printf(comptime format: []const u8, args: anytype) void {
-    fmt.format(writer, format, args) catch unreachable;
+    var buf: [1024]u8 = undefined;
+    var fba = std.heap.FixedBufferAllocator.init(buf[0..1024]);
+    const allocator = fba.allocator();
+    const s = fmt.allocPrint(allocator, format, args) catch "error";
+    puts(s);
 }

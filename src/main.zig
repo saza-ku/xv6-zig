@@ -1,10 +1,20 @@
+const std = @import("std");
 const console = @import("console.zig");
+const kalloc = @import("kalloc.zig");
 const memlayout = @import("memlayout.zig");
 const mmu = @import("mmu.zig");
+const vm = @import("vm.zig");
+
+extern const end: u8;
 
 export fn main() callconv(.Naked) noreturn {
+    const end_addr = @ptrToInt(&end);
+    kalloc.kinit1(end_addr, memlayout.p2v(4 * 1024 * 1024));
+
+    vm.kvmalloc() orelse asm volatile ("1: jmp 1b");
     console.initialize();
-    console.puts("Hello world!");
+
+    console.puts("Hello, world!");
 
     while (true) {}
 }
