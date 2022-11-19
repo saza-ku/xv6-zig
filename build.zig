@@ -45,7 +45,7 @@ pub fn build(b: *Builder) void {
     iso_step.dependOn(&iso_cmd.step);
     b.default_step.dependOn(iso_step);
 
-    const run_cmd_str = &[_][]const u8{ "qemu-system-x86_64", "-cdrom", iso_path, "-debugcon", "stdio", "-vga", "virtio", "-m", "4G" };
+    const run_cmd_str = &[_][]const u8{ "qemu-system-i386", "-cdrom", iso_path, "-m", "512", "-smp", "2" };
 
     const run_cmd = b.addSystemCommand(run_cmd_str);
     run_cmd.step.dependOn(b.getInstallStep());

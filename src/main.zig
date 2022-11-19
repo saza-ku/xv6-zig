@@ -3,6 +3,7 @@ const console = @import("console.zig");
 const kalloc = @import("kalloc.zig");
 const memlayout = @import("memlayout.zig");
 const mmu = @import("mmu.zig");
+const mp = @import("mp.zig");
 const vm = @import("vm.zig");
 
 extern const end: u8;
@@ -12,6 +13,7 @@ export fn main() callconv(.Naked) noreturn {
     kalloc.kinit1(end_addr, memlayout.p2v(4 * 1024 * 1024));
 
     vm.kvmalloc() orelse asm volatile ("1: jmp 1b");
+    mp.mpinit();
     console.initialize();
 
     console.puts("Hello, world!");

@@ -8,6 +8,21 @@ pub const CR0_PG: usize = 0x80000000; // Paging
 
 pub const CR4_PSE: usize = 0x00000010; // Page size extension
 
+// various segment selectors.
+pub const SEG_KCODE = 1; // kernel code
+pub const SEG_KDATA = 2; // kernel data+stack
+pub const SEG_UCODE = 3; // user code
+pub const SEG_UDATA = 4; // user data+stack
+pub const SEG_TSS = 5; // this process's task state
+
+// cpu->gdt[NSEGS] holds the above segments.
+pub const NSEGS = 6;
+
+// Segment Descriptor
+pub const segdesc = struct {
+    // TODO
+};
+
 // A virtual address 'la' has a three-part structure as follows:
 //
 // +--------10------+-------10-------+---------12----------+
@@ -59,3 +74,11 @@ pub const PTE_PS = 0x080; // Page Size
 
 pub const pte_t = usize;
 pub const pde_t = usize;
+
+pub const taskstate = struct {
+    link: u32, // Old ts selector
+    esp0: u32, // Stack pointers and segment selectors
+    ss0: u16, // after an increase in privilege level
+    padding1: u16,
+    // TODO
+};
