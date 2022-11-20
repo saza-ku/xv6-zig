@@ -1,6 +1,7 @@
 const std = @import("std");
 const console = @import("console.zig");
 const kalloc = @import("kalloc.zig");
+const lapic = @import("lapic.zig");
 const memlayout = @import("memlayout.zig");
 const mmu = @import("mmu.zig");
 const mp = @import("mp.zig");
@@ -14,6 +15,7 @@ export fn main() callconv(.Naked) noreturn {
 
     vm.kvmalloc() orelse asm volatile ("1: jmp 1b");
     mp.mpinit();
+    lapic.lapicinit();
     console.initialize();
 
     console.puts("Hello, world!");

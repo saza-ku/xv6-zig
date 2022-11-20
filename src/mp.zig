@@ -56,7 +56,7 @@ const mpconf = packed struct {
     oemtable: *u32,
     oemlength: u16,
     entry: u16,
-    lapicaddr: *u32,
+    lapicaddr: [*]u32,
     xlength: u16,
     xchecksum: u8,
     reserved: u8,
