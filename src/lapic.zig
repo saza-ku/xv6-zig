@@ -79,3 +79,7 @@ pub fn lapicinit() void {
     // Enable interrupts on the APIC (but not on the processor).
     lapicw(TPR, 0);
 }
+
+pub fn lapicid() u32 {
+    return lapic[ID] >> 24;
+}

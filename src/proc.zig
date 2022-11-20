@@ -1,5 +1,7 @@
 const file = @import("file.zig");
+const lapic = @import("lapic.zig");
 const mmu = @import("mmu.zig");
+const mp = @import("mp.zig");
 const param = @import("param.zig");
 const x86 = @import("x86.zig");
 
@@ -59,3 +61,23 @@ pub const proc = struct {
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
+
+pub fn cpuid() u32 {
+    return (@ptrToInt(&mp.cpus) - @ptrToInt(mycpu())) / @sizeOf(cpu);
+}
+
+pub fn mycpu() *cpu {
+    if (x86.readeflags() & mmu.FL_IF != 0) {
+        asm volatile ("1: jmp 1b"); // TODO: handle error
+    }
+    const apicid = lapic.lapicid();
+    // APIC IDs are not guaranteed to be contiguous. Maybe we should have
+    // a reverse map, or reserve a register to store &cpus[i].
+    for (mp.cpus) |*c| {
+        if (c.apicid == apicid) {
+            return c;
+        }
+    }
+    asm volatile ("1: jmp 1b"); // TODO: handle error
+    unreachable;
+}

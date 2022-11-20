@@ -1,21 +1,26 @@
 const kalloc = @import("kalloc.zig");
-const mmu = @import("mmu.zig");
 const memlayout = @import("memlayout.zig");
+const mmu = @import("mmu.zig");
+const mp = @import("mp.zig");
 const sh = @import("sh.zig");
+const proc = @import("proc.zig");
 const x86 = @import("x86.zig");
 
 extern const data: u8; // defined by kernel.ld
 pub var kpgdir: [*]mmu.pde_t = undefined;
 var count: u32 = 0;
 
-// This table defines the kernel's mappings, which are present in
-// every process's page table.
-const kmap_t = struct {
-    virt: usize,
-    phys_start: usize,
-    phys_end: usize,
-    perm: usize,
-};
+pub fn seginit() void {
+    var c = &mp.cpus[proc.cpuid()];
+    if (proc.cpuid() == 1) {
+        asm volatile ("1: jmp 1b");
+    }
+    c.*.gdt[mmu.SEG_KCODE] = mmu.segdesc.new(mmu.STA_X | mmu.STA_R, 0, 0xffffffff, mmu.DPL_KERNEL);
+    c.*.gdt[mmu.SEG_KDATA] = mmu.segdesc.new(mmu.STA_W, 0, 0xffffffff, mmu.DPL_KERNEL);
+    c.*.gdt[mmu.SEG_UCODE] = mmu.segdesc.new(mmu.STA_X | mmu.STA_R, 0, 0xffffffff, mmu.DPL_USER);
+    c.*.gdt[mmu.SEG_KCODE] = mmu.segdesc.new(mmu.STA_W, 0, 0xffffffff, mmu.DPL_USER);
+    x86.lgdt(@ptrToInt(&c.*.gdt), @sizeOf(@TypeOf(c.*.gdt)));
+}
 
 // Return the address of the PTE in page table pgdir
 // that corresponds to virtual address va.  If alloc is true,
@@ -72,6 +77,14 @@ fn setupkvm() ?[*]mmu.pde_t {
 
     const data_addr = @ptrToInt(&data);
 
+    // This table defines the kernel's mappings, which are present in
+    // every process's page table.
+    const kmap_t = struct {
+        virt: usize,
+        phys_start: usize,
+        phys_end: usize,
+        perm: usize,
+    };
     const kmap = [4]kmap_t{
         kmap_t{
             .virt = memlayout.KERNBASE,

@@ -37,11 +37,29 @@ pub fn out(port: u16, data: anytype) void {
     }
 }
 
+pub fn lgdt(p: usize, size: u16) void {
+    const pd = [3]u16 {
+        size - 1, @intCast(u16, p & 0xffff), @intCast(u16, p >> 16),
+    };
+
+    asm volatile ("lgdt (%%eax)"
+    :
+    : [pd] "{eax}" (@ptrToInt(&pd)),
+    );
+} 
+
 pub fn lcr3(addr: usize) void {
     asm volatile (
         "movl %[addr], %%cr3"
         :
         : [addr] "{eax}" (addr),
+    );
+}
+
+pub fn readeflags() u32 {
+    return asm volatile ("pushfl; popl %[eflags]"
+        : [eflags] "={eax}" (-> u32),
+        :
     );
 }
 

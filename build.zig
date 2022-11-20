@@ -45,7 +45,7 @@ pub fn build(b: *Builder) void {
     iso_step.dependOn(&iso_cmd.step);
     b.default_step.dependOn(iso_step);
 
-    const run_cmd_str = &[_][]const u8{ "qemu-system-i386", "-cdrom", iso_path, "-m", "512", "-smp", "2" };
+    const run_cmd_str = &[_][]const u8{ "qemu-system-i386", "-drive", "file=zig-out/bin/disk.iso,index=0,media=disk,format=raw", "-m", "512", "-smp", "2" };
 
     const run_cmd = b.addSystemCommand(run_cmd_str);
     run_cmd.step.dependOn(b.getInstallStep());

@@ -16,6 +16,7 @@ export fn main() callconv(.Naked) noreturn {
     vm.kvmalloc() orelse asm volatile ("1: jmp 1b");
     mp.mpinit();
     lapic.lapicinit();
+    vm.seginit();
     console.initialize();
 
     console.puts("Hello, world!");
