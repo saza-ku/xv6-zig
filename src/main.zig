@@ -5,6 +5,7 @@ const lapic = @import("lapic.zig");
 const memlayout = @import("memlayout.zig");
 const mmu = @import("mmu.zig");
 const mp = @import("mp.zig");
+const picirq = @import("picirq.zig");
 const vm = @import("vm.zig");
 
 extern const end: u8;
@@ -17,6 +18,7 @@ export fn main() callconv(.Naked) noreturn {
     mp.mpinit();
     lapic.lapicinit();
     vm.seginit();
+    picirq.picinit();
     console.initialize();
 
     console.puts("Hello, world!");
