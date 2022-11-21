@@ -1,5 +1,6 @@
 const std = @import("std");
 const console = @import("console.zig");
+const ioapic = @import("ioapic.zig");
 const kalloc = @import("kalloc.zig");
 const lapic = @import("lapic.zig");
 const memlayout = @import("memlayout.zig");
@@ -19,6 +20,7 @@ export fn main() callconv(.Naked) noreturn {
     lapic.lapicinit();
     vm.seginit();
     picirq.picinit();
+    ioapic.ioapicinit();
     console.initialize();
 
     console.puts("Hello, world!");
