@@ -63,6 +63,23 @@ pub fn readeflags() u32 {
     );
 }
 
+pub fn cli() void {
+    asm volatile("cli");
+}
+
+pub fn sti() void {
+    asm volatile("sti");
+}
+
+pub fn xchg(addr: *u32, newval: u32) u32 {
+    return asm volatile ("lock; xchgl (%[addr]), %[newval]"
+            : [result] "={eax}" (-> u32),
+            : [addr] "r" (addr),
+              [newval] "{eax}" (newval),
+            : "memory"
+    );
+}
+
 // Layout of the trap frame built on the stack by the
 // hardware and by trapasm.S, and passed to trap().
 pub const trapframe = struct {

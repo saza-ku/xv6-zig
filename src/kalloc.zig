@@ -13,13 +13,12 @@ pub var kmem = struct {
     use_lock: bool,
     freelist: ?*run,
 }{
-    .lock = spinlock.spinlock{ .locked = false, .name = "kmem", .pcs = undefined },
+    .lock = spinlock.spinlock.init("kmem"),
     .use_lock = false,
     .freelist = null,
 };
 
 pub fn kinit1(vstart: usize, vend: usize) void {
-    kmem.use_lock = false;
     freerange(vstart, vend);
 }
 

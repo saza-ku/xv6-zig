@@ -7,9 +7,16 @@ const Feature = @import("std").Target.Cpu.Feature;
 const objFiles = [_][]u8{"main"};
 
 pub fn build(b: *Builder) void {
+    const features = Target.x86.Feature;
+
+    var disabled_features = Feature.Set.empty;
+
+    disabled_features.addFeature(@enumToInt(features.sse2));
+
     const target = CrossTarget{
         .cpu_arch = Target.Cpu.Arch.x86,
         .os_tag = Target.Os.Tag.freestanding,
+        .cpu_features_sub = disabled_features,
     };
 
     const mode = b.standardReleaseOptions();

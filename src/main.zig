@@ -7,6 +7,7 @@ const memlayout = @import("memlayout.zig");
 const mmu = @import("mmu.zig");
 const mp = @import("mp.zig");
 const picirq = @import("picirq.zig");
+const spinlock = @import("spinlock.zig");
 const vm = @import("vm.zig");
 
 extern const end: u8;
@@ -21,6 +22,7 @@ export fn main() callconv(.Naked) noreturn {
     vm.seginit();
     picirq.picinit();
     ioapic.ioapicinit();
+    locktest();
     console.initialize();
 
     console.puts("Hello, world!");
@@ -40,3 +42,14 @@ export var entrypgdir: [mmu.NPDENTRIES]u32 align(mmu.PGSIZE) = init: {
     dir[memlayout.KERNBASE >> mmu.PDXSHIFT] = (0) | mmu.PTE_P | mmu.PTE_W | mmu.PTE_PS;
     break :init dir;
 };
+
+
+fn locktest() void {
+    var l = spinlock.spinlock.init("hoge");
+
+    l.acquire();
+    l.release();
+    l.acquire();
+    l.release();
+    l.acquire();
+}

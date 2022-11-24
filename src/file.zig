@@ -9,5 +9,15 @@ pub const file = struct {
 };
 
 pub const inode = struct {
-
+    dev: u32,
+    inum: u32,
+    ref: u32,
+    //lock: , sleeplock
+    valid: u32,
+    typ: u16,
+    major: u16,
+    minor: u16,
+    nlink: u16,
+    size: u32,
+    addrs: [13]u32,
 };

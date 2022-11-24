@@ -1,8 +1,14 @@
+const spinlock = @import("spinlock.zig");
 const std = @import("std");
 const fmt = @import("std").fmt;
 const mem = @import("std").mem;
 const Writer = @import("std").io.Writer;
 const memlayout = @import("memlayout.zig");
+
+pub const cons: struct {
+    lock: spinlock.spinlock,
+    locking: bool,
+} = undefined;
 
 const VGA_WIDTH = 80;
 const VGA_HEIGHT = 25;
