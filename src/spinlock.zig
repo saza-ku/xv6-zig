@@ -1,5 +1,6 @@
 const memlayout = @import("memlayout.zig");
 const mmu = @import("mmu.zig");
+const param = @import("param.zig");
 const proc = @import("proc.zig");
 const x86 = @import("x86.zig");
 
@@ -84,7 +85,7 @@ pub const spinlock = struct {
     }
 };
 
-fn pushcli() void {
+pub fn pushcli() void {
     const eflags = x86.readeflags();
     x86.cli();
     const mycpu = proc.mycpu();
@@ -94,7 +95,7 @@ fn pushcli() void {
     mycpu.*.ncli += 1;
 }
 
-fn popcli() void {
+pub fn popcli() void {
     if (x86.readeflags() & mmu.FL_IF != 0) {
         asm volatile ("1: jmp 1b"); // TODO: handle error
     }

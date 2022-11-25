@@ -83,3 +83,7 @@ pub fn lapicinit() void {
 pub fn lapicid() u32 {
     return lapic[ID] >> 24;
 }
+
+// Spin for a given number of microseconds.
+// On real hardware would want to tune this dynamically.
+pub fn microdelay(_: u32) void {}

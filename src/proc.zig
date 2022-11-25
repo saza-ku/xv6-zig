@@ -3,6 +3,7 @@ const lapic = @import("lapic.zig");
 const mmu = @import("mmu.zig");
 const mp = @import("mp.zig");
 const param = @import("param.zig");
+const spinlock = @import("spinlock.zig");
 const x86 = @import("x86.zig");
 
 // Per-CPU state
@@ -14,7 +15,7 @@ pub const cpu = struct {
     started: bool, // Has the CPU started?
     ncli: u32, // Depth of pushcli nesting.
     intena: bool, // Were interrupts enabled before pushcli?
-    proc: ?*proc,
+    proc: *proc,
 };
 
 pub const procstate = enum {
@@ -56,6 +57,14 @@ pub const proc = struct {
     name: []const u8, // Process name (debugging)
 };
 
+var ptable = struct {
+    lock: spinlock.spinlock,
+    proc: [param.NPROC]proc,
+} {
+    .lock = spinlock.spinlock.init("ptable"),
+    .proc = undefined,
+};
+
 // Process memory is laid out contiguously, low addresses first:
 //   text
 //   original data and bss
@@ -80,4 +89,60 @@ pub fn mycpu() *cpu {
     }
     asm volatile ("1: jmp 1b"); // TODO: handle error
     unreachable;
+}
+
+// Disable interrupts so that we are not rescheduled
+// while reading proc from the cpu structure
+pub fn myproc() *proc {
+    spinlock.pushcli();
+    const c = mycpu();
+    const p = c.proc;
+    spinlock.popcli();
+    return p;
+}
+
+pub fn sleep(chan: usize, lk: *spinlock.spinlock) void {
+    const p = myproc();
+
+    // Must acquire ptable.lock in order to
+    // change p->state and then call sched.
+    // Once we hold ptable.lock, we can be
+    // guaranteed that we won't miss any wakeup
+    // (wakeup runs with ptable.lock locked),
+    // so it's okay to release lk.
+    if (lk != &ptable.lock) {
+        ptable.lock.acquire();
+        lk.release();
+    }
+    // Go to sleep.
+    p.*.chan = chan;
+    p.*.state = procstate.SLEEPING;
+
+    // TODO: sched();
+
+    // Tidy up
+    p.*.chan = 0;
+
+    // Reacquire original lock.
+    if(lk != &ptable.lock){
+      ptable.lock.release();
+      lk.acquire();
+    }
+}
+
+// Wake up all processes sleeping on chan.
+// The ptable lock must be held.
+fn wakeup1(chan: usize) void {
+    for (ptable.proc) |*p| {
+        if (p.state == procstate.SLEEPING and p.chan == chan) {
+            p.*.state = procstate.RUNNABLE;
+        }
+    }
+}
+
+// Wake up all processes sleeping on chan.
+pub fn wakeup(chan: usize) void {
+    ptable.lock.acquire();
+    wakeup1(chan);
+    ptable.lock.release();
 }

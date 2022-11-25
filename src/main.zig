@@ -8,6 +8,7 @@ const mmu = @import("mmu.zig");
 const mp = @import("mp.zig");
 const picirq = @import("picirq.zig");
 const spinlock = @import("spinlock.zig");
+const uart = @import("uart.zig");
 const vm = @import("vm.zig");
 
 extern const end: u8;
@@ -22,9 +23,13 @@ export fn main() callconv(.Naked) noreturn {
     vm.seginit();
     picirq.picinit();
     ioapic.ioapicinit();
-    locktest();
+    console.consoleinit();
+
+    uart.uartinit();
+
     console.initialize();
 
+    locktest();
     console.puts("Hello, world!");
 
     while (true) {}
