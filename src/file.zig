@@ -1,3 +1,4 @@
+const console = @import("console.zig");
 const sleeplock = @import("sleeplock.zig");
 const param = @import("param.zig");
 
@@ -44,6 +45,19 @@ pub const devsw_t = struct {
     write: *const fn(ip: *inode, buf: []const u8, n: u32) u32,
 };
 
-pub var devsw: [param.NDEV]devsw_t = undefined;
+pub var devsw: [param.NDEV]devsw_t = init: {
+    var initial_value: [param.NDEV]devsw_t = undefined;
+    for (initial_value) |*pt, i| {
+        if (i == CONSOLE) {
+            pt.* = devsw_t {
+                .read = console.consoleread,
+                .write = console.consolewrite,
+            };
+        } else {
+            pt.* = undefined;
+        }
+    }
+    break :init initial_value;
+};
 
 pub const CONSOLE = 1;

@@ -96,7 +96,7 @@ fn ctrl(x: u8) u8 {
     return x - '@';
 }
 
-fn consoleread(ip: *file.inode, dst: [*]u8, n: u32) ?u32 {
+pub fn consoleread(ip: *file.inode, dst: [*]u8, n: u32) ?u32 {
     var read_size: u32 = 0;
     ip.unlock();
     cons.lock.acquire();
@@ -132,14 +132,12 @@ fn consoleread(ip: *file.inode, dst: [*]u8, n: u32) ?u32 {
 }
 
 pub fn consoleinit() void {
-    file.devsw[file.CONSOLE].write = consolewrite;
-    file.devsw[file.CONSOLE].read = consoleread;
     cons.locking = true;
 
     ioapic.ioapicenable(traps.IRQ_KBD, 0);
 }
 
-fn consolewrite(ip: *file.inode, buf: []const u8, n: u32) u32 {
+pub fn consolewrite(ip: *file.inode, buf: []const u8, n: u32) u32 {
     ip.unlock();
     cons.lock.acquire();
 
