@@ -8,6 +8,7 @@ const mmu = @import("mmu.zig");
 const mp = @import("mp.zig");
 const picirq = @import("picirq.zig");
 const spinlock = @import("spinlock.zig");
+const trap = @import("trap.zig");
 const uart = @import("uart.zig");
 const vm = @import("vm.zig");
 
@@ -26,11 +27,12 @@ export fn main() callconv(.Naked) noreturn {
     console.consoleinit();
 
     uart.uartinit();
+    trap.tvinit();
+    trap.idtinit();
 
     console.initialize();
 
     locktest();
-    console.puts("Hello, world!");
 
     while (true) {}
 }

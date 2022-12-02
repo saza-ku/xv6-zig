@@ -1,6 +1,6 @@
 const ioapic = @import("ioapic.zig");
 const lapic = @import("lapic.zig");
-const traps = @import("traps.zig");
+const trap = @import("trap.zig");
 const x86 = @import("x86.zig");
 
 const COM1 = 0x3f8;
@@ -29,7 +29,7 @@ pub fn uartinit() void {
     // enable interrupts.
     _ = x86.in(u8, COM1 + 2);
     _ = x86.in(u8, COM1 + 0);
-    ioapic.ioapicenable(traps.IRQ_COM1, 0);
+    ioapic.ioapicenable(trap.IRQ_COM1, 0);
 
     // Announce that we're here.
     const str = "xv6...";

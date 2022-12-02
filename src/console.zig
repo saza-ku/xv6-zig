@@ -3,7 +3,7 @@ const ioapic = @import("ioapic.zig");
 const file = @import("file.zig");
 const proc = @import("proc.zig");
 const spinlock = @import("spinlock.zig");
-const traps = @import("traps.zig");
+const trap = @import("trap.zig");
 const uart = @import("uart.zig");
 const x86 = @import("x86.zig");
 const fmt = @import("std").fmt;
@@ -134,7 +134,7 @@ pub fn consoleread(ip: *file.inode, dst: [*]u8, n: u32) ?u32 {
 pub fn consoleinit() void {
     cons.locking = true;
 
-    ioapic.ioapicenable(traps.IRQ_KBD, 0);
+    ioapic.ioapicenable(trap.IRQ_KBD, 0);
 }
 
 pub fn consolewrite(ip: *file.inode, buf: []const u8, n: u32) u32 {

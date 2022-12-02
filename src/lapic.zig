@@ -1,4 +1,4 @@
-const traps = @import("traps.zig");
+const trap = @import("trap.zig");
 
 // Local APIC registers, divided by 4 for use as []u32 indices.
 const ID = 0x0020 / @sizeOf(u32); // ID
@@ -40,14 +40,14 @@ fn lapicw(index: u32, value: u32) void {
 
 pub fn lapicinit() void {
     // Enable local APIC; set spurious interrupt vector.
-    lapicw(SVR, ENABLE | (traps.T_IRQ0 + traps.IRQ_SPURIOUS));
+    lapicw(SVR, ENABLE | (trap.T_IRQ0 + trap.IRQ_SPURIOUS));
 
     // The timer repeatedly counts down at bus frequency
     // from lapic[TICR] and then issues an interrupt.
     // If xv6 cared more about precise timekeeping,
     // TICR would be calibrated using an external time source.
     lapicw(TDCR, X1);
-    lapicw(TIMER, PERIODIC | (traps.T_IRQ0 + traps.IRQ_TIMER));
+    lapicw(TIMER, PERIODIC | (trap.T_IRQ0 + trap.IRQ_TIMER));
     lapicw(TICR, 10000000);
 
     // Disable logical interrupt lines.
@@ -62,7 +62,7 @@ pub fn lapicinit() void {
     }
 
     // Map error interrupt to IRQ_ERROR.
-    lapicw(ERROR, traps.T_IRQ0 + traps.IRQ_ERROR);
+    lapicw(ERROR, trap.T_IRQ0 + trap.IRQ_ERROR);
 
     // Clear error status register (requires back-to-back writes).
     lapicw(ESR, 0);
@@ -82,6 +82,10 @@ pub fn lapicinit() void {
 
 pub fn lapicid() u32 {
     return lapic[ID] >> 24;
+}
+
+pub fn lapiceoi() void {
+    lapicw(EOI, 0);
 }
 
 // Spin for a given number of microseconds.

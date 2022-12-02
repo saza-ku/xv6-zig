@@ -3,7 +3,7 @@
 // See also picirq.c.
 
 const mp = @import("mp.zig");
-const traps = @import("traps.zig");
+const trap = @import("trap.zig");
 
 const IOAPIC = 0xFEC00000; // Default physical address of IO APIC
 
@@ -52,7 +52,7 @@ pub fn ioapicinit() void {
     // and not routed to any CPUs.
     var i: u32 = 0;
     while (i <= maxintr) : (i += 1) {
-        ioapic.write(REG_TABLE + 2 * i, INT_DISABLED | (traps.T_IRQ0 + i));
+        ioapic.write(REG_TABLE + 2 * i, INT_DISABLED | (trap.T_IRQ0 + i));
         ioapic.write(REG_TABLE + 2 * i + 1, 0);
     }
 }
@@ -61,6 +61,6 @@ pub fn ioapicenable(irq: u32, cpunum: u8) void {
     // Mark interrupt edge-triggered, active high,
     // enabled, and routed to the given cpunum,
     // which happens to be that cpu's APIC ID.
-    ioapic.write(REG_TABLE + 2 * irq, traps.T_IRQ0 + irq);
+    ioapic.write(REG_TABLE + 2 * irq, trap.T_IRQ0 + irq);
     ioapic.write(REG_TABLE + 2 * irq + 1, @intCast(u32, cpunum) << 24);
 }

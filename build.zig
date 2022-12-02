@@ -37,6 +37,8 @@ pub fn build(b: *Builder) void {
     kernel.setTarget(target);
     kernel.setBuildMode(mode);
     kernel.setLinkerScriptPath(.{ .path = "src/kernel.ld" });
+    kernel.addAssemblyFile("src/trapasm.S");
+    kernel.addAssemblyFile("src/vector.S");
     kernel.addObject(main_obj);
     kernel.code_model = .kernel;
     kernel.install();

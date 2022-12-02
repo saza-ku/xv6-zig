@@ -1,0 +1,94 @@
+// x86 trap and interrupt constants.
+
+const console = @import("console.zig");
+const lapic = @import("lapic.zig");
+const mmu = @import("mmu.zig");
+const proc = @import("proc.zig");
+const spinlock = @import("spinlock.zig");
+const x86 = @import("x86.zig");
+
+// Processor-defined
+pub const T_DIVIDE = 0;
+pub const T_DEBUG = 1;
+pub const T_NMI = 2;
+pub const T_BRKPT = 3;
+pub const T_OFLOW = 4;
+pub const T_BOUND = 5;
+pub const T_ILLOP = 6;
+pub const T_DEVICE = 7;
+pub const T_DBLFLT = 8;
+pub const T_TSS = 10;
+pub const T_SEGNP = 11;
+pub const T_STACK = 12;
+pub const T_GPFLT = 13;
+pub const T_PGFLT = 14;
+pub const T_FPERR = 16;
+pub const T_ALIGN = 17;
+pub const T_MCHK = 18;
+pub const T_SIMDERR = 19;
+pub const T_SYSCALL = 64;
+pub const T_DEFAULT = 500;
+pub const T_IRQ0 = 32;
+pub const IRQ_TIMER = 0;
+pub const IRQ_KBD = 1;
+pub const IRQ_COM1 = 4;
+pub const IRQ_IDE = 14;
+pub const IRQ_ERROR = 19;
+pub const IRQ_SPURIOUS = 31;
+
+var idt: [256]mmu.gatedesc = undefined;
+extern const vectors: u32;
+var tickslock = spinlock.spinlock.init("time");
+pub var ticks: u32 = 0;
+
+pub fn tvinit() void {
+    // const v = @ptrCast([*]u32, &vectors);
+
+    var i: u32 = 0;
+    while (i < 256) : (i += 1) {
+        idt[i] = mmu.gatedesc.new(false, mmu.SEG_KCODE << 3, @ptrToInt(&testIH), 0);
+    }
+    idt[T_SYSCALL] = mmu.gatedesc.new(true, mmu.SEG_KCODE << 3, @ptrToInt(&testIH), mmu.DPL_USER);
+}
+
+pub fn idtinit() void {
+    x86.lidt(@ptrToInt(&idt), @intCast(u16, @sizeOf(@TypeOf(idt))));
+}
+
+export fn trap(tf: *x86.trapframe) void {
+    if (tf.trapno == T_SYSCALL) {
+        // TODO: system call
+    }
+    console.puts("interrupted");
+
+    switch (tf.trapno) {
+        T_IRQ0 + IRQ_TIMER => {
+            tickslock.acquire();
+            ticks += 1;
+            proc.wakeup(@ptrToInt(&ticks));
+            tickslock.release();
+            lapic.lapiceoi();
+        },
+        T_IRQ0 + IRQ_IDE => {
+            // TODO: implement
+        },
+        T_IRQ0 + IRQ_IDE + 1 => {
+            // Bochs generates spurious IDE1 interrupts.
+        },
+        T_IRQ0 + IRQ_KBD => {
+            // TODO: implement
+        },
+        T_IRQ0 + IRQ_COM1 => {
+            // TODO: implement
+        },
+        else => {
+            asm volatile ("1: jmp 1b"); // TODO: handle error
+        },
+    }
+
+    // TODO: implement
+}
+
+pub fn testIH() callconv(.Naked) void {
+    console.puts("hogehoge");
+}
