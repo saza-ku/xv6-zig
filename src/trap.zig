@@ -2,6 +2,7 @@
 
 const console = @import("console.zig");
 const lapic = @import("lapic.zig");
+const memlayout = @import("memlayout.zig");
 const mmu = @import("mmu.zig");
 const proc = @import("proc.zig");
 const spinlock = @import("spinlock.zig");
@@ -46,7 +47,7 @@ pub fn tvinit() void {
 
     var i: u32 = 0;
     while (i < 256) : (i += 1) {
-        idt[i] = mmu.gatedesc.new(false, mmu.SEG_KCODE << 3, v[i], 0);
+        idt[i] = mmu.gatedesc.new(false, mmu.SEG_KCODE << 3, @ptrToInt(&testIH), 0);
     }
     idt[T_SYSCALL] = mmu.gatedesc.new(true, mmu.SEG_KCODE << 3, v[T_SYSCALL], mmu.DPL_USER);
 }
@@ -92,6 +93,9 @@ export fn trap(tf: *x86.trapframe) void {
 }
 
 pub fn testIH() callconv(.Naked) void {
+    console.initialize();
+    console.printf("testIH: {x}", .{ @ptrToInt(&idt) });
     lapic.lapiceoi();
+    asm volatile("hlt");
     asm volatile ("iret");
 }

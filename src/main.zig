@@ -16,10 +16,10 @@ const x86 = @import("x86.zig");
 extern const end: u8;
 
 export fn main() callconv(.Naked) noreturn {
-    const end_addr = @ptrToInt(&end);
-    kalloc.kinit1(end_addr, memlayout.p2v(4 * 1024 * 1024));
+    //const end_addr = @ptrToInt(&end);
+   // kalloc.kinit1(end_addr, memlayout.p2v(4 * 1024 * 1024));
 
-    vm.kvmalloc() orelse asm volatile ("1: jmp 1b");
+    //vm.kvmalloc() orelse asm volatile ("1: jmp 1b");
     //mp.mpinit();
     //lapic.lapicinit();
     //vm.seginit();
