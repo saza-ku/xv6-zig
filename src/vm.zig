@@ -75,7 +75,7 @@ fn setupkvm() ?[*]mmu.pde_t {
         sh.panic("PHYSTOP too high");
     }
 
-    const data_addr = @ptrToInt(&data);
+    //const data_addr = @ptrToInt(&data);
 
     // This table defines the kernel's mappings, which are present in
     // every process's page table.
@@ -85,29 +85,11 @@ fn setupkvm() ?[*]mmu.pde_t {
         phys_end: usize,
         perm: usize,
     };
-    const kmap = [4]kmap_t{
+    const kmap = [1]kmap_t{
         kmap_t{
             .virt = memlayout.KERNBASE,
             .phys_start = 0,
-            .phys_end = memlayout.EXTMEM,
-            .perm = mmu.PTE_W,
-        },
-        kmap_t{
-            .virt = memlayout.KERNLINK,
-            .phys_start = memlayout.v2p(memlayout.KERNLINK),
-            .phys_end = memlayout.v2p(data_addr),
-            .perm = 0,
-        },
-        kmap_t{
-            .virt = data_addr,
-            .phys_start = memlayout.v2p(data_addr),
-            .phys_end = memlayout.PHYSTOP,
-            .perm = mmu.PTE_W,
-        },
-        kmap_t{
-            .virt = memlayout.DEVSPACE,
-            .phys_start = memlayout.DEVSPACE,
-            .phys_end = 0,
+            .phys_end = 0x04000000,
             .perm = mmu.PTE_W,
         },
     };

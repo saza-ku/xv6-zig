@@ -42,13 +42,13 @@ var tickslock = spinlock.spinlock.init("time");
 pub var ticks: u32 = 0;
 
 pub fn tvinit() void {
-    //const v = @ptrCast([*]u32, &vectors);
+    const v = @ptrCast([*]u32, &vectors);
 
     var i: u32 = 0;
     while (i < 256) : (i += 1) {
-        idt[i] = mmu.gatedesc.new(false, mmu.SEG_KCODE << 3, @ptrToInt(&testIH), 0);
+        idt[i] = mmu.gatedesc.new(false, mmu.SEG_KCODE << 3, v[i], 0);
     }
-    idt[T_SYSCALL] = mmu.gatedesc.new(true, mmu.SEG_KCODE << 3, @ptrToInt(&testIH), mmu.DPL_USER);
+    idt[T_SYSCALL] = mmu.gatedesc.new(true, mmu.SEG_KCODE << 3, v[T_SYSCALL], mmu.DPL_USER);
 }
 
 pub fn idtinit() void {
@@ -56,10 +56,12 @@ pub fn idtinit() void {
 }
 
 export fn trap(tf: *x86.trapframe) void {
-    asm volatile ("1: jmp 1b");
     if (tf.trapno == T_SYSCALL) {
         // TODO: system call
     }
+
+    console.initialize();
+    console.puts("interrupted!");
 
     switch (tf.trapno) {
         T_IRQ0 + IRQ_TIMER => {
@@ -90,6 +92,6 @@ export fn trap(tf: *x86.trapframe) void {
 }
 
 pub fn testIH() callconv(.Naked) void {
-    asm volatile ("cli");
-    asm volatile ("hlt");
+    lapic.lapiceoi();
+    asm volatile ("iret");
 }

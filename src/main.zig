@@ -20,20 +20,20 @@ export fn main() callconv(.Naked) noreturn {
     kalloc.kinit1(end_addr, memlayout.p2v(4 * 1024 * 1024));
 
     vm.kvmalloc() orelse asm volatile ("1: jmp 1b");
-    mp.mpinit();
-    lapic.lapicinit();
-    vm.seginit();
-    picirq.picinit();
-    ioapic.ioapicinit();
-    console.consoleinit();
+    //mp.mpinit();
+    //lapic.lapicinit();
+    //vm.seginit();
+    //picirq.picinit();
+    //ioapic.ioapicinit();
+    //console.consoleinit();
 
-    uart.uartinit();
+    //uart.uartinit();
     trap.tvinit();
     trap.idtinit();
 
     console.initialize();
 
-    locktest();
+    //locktest();
 
     x86.sti();
     console.puts("Hello, Saza!");
