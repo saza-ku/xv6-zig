@@ -11,6 +11,7 @@ const spinlock = @import("spinlock.zig");
 const trap = @import("trap.zig");
 const uart = @import("uart.zig");
 const vm = @import("vm.zig");
+const x86 = @import("x86.zig");
 
 extern const end: u8;
 
@@ -33,6 +34,9 @@ export fn main() callconv(.Naked) noreturn {
     console.initialize();
 
     locktest();
+
+    x86.sti();
+    console.puts("Hello, Saza!");
 
     while (true) {}
 }
@@ -59,4 +63,5 @@ fn locktest() void {
     l.acquire();
     l.release();
     l.acquire();
+    l.release();
 }
