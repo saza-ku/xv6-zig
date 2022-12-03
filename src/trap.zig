@@ -47,7 +47,7 @@ pub fn tvinit() void {
 
     var i: u32 = 0;
     while (i < 256) : (i += 1) {
-        idt[i] = mmu.gatedesc.new(false, mmu.SEG_KCODE << 3, @ptrToInt(&testIH), 0);
+        idt[i] = mmu.gatedesc.new(false, mmu.SEG_KCODE << 3, v[i], 0);
     }
     idt[T_SYSCALL] = mmu.gatedesc.new(true, mmu.SEG_KCODE << 3, v[T_SYSCALL], mmu.DPL_USER);
 }
