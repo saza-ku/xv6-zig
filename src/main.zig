@@ -19,23 +19,23 @@ export fn main() callconv(.Naked) noreturn {
     const end_addr = @ptrToInt(&end);
     kalloc.kinit1(end_addr, memlayout.p2v(4 * 1024 * 1024));
 
-    vm.kvmalloc() orelse asm volatile ("1: jmp 1b");
-    mp.mpinit();
-    lapic.lapicinit();
-    vm.seginit();
-    picirq.picinit();
-    ioapic.ioapicinit();
-    console.consoleinit();
-
-    uart.uartinit();
+    //vm.kvmalloc() orelse asm volatile ("1: jmp 1b");
+    //mp.mpinit();
+    //lapic.lapicinit();
+    //vm.seginit();
+    //picirq.picinit();
+    //ioapic.ioapicinit();
+    //console.consoleinit();
+//
+    //uart.uartinit();
     trap.tvinit();
     trap.idtinit();
 
     console.initialize();
 
-    locktest();
+    //locktest();
 
-    console.printf("Hello, {x}", .{ @ptrToInt(&trap.testIH) } );
+    console.printf("Hello, {x}", .{ end_addr } );
 
     while (true) {}
 }
