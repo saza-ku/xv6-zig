@@ -1,6 +1,7 @@
 // x86 trap and interrupt constants.
 
 const console = @import("console.zig");
+const kbd = @import("kbd.zig");
 const lapic = @import("lapic.zig");
 const mmu = @import("mmu.zig");
 const proc = @import("proc.zig");
@@ -42,13 +43,13 @@ var tickslock = spinlock.spinlock.init("time");
 pub var ticks: u32 = 0;
 
 pub fn tvinit() void {
-    //const v = @ptrCast([*]u32, &vectors);
+    const v = @ptrCast([*]u32, &vectors);
 
     var i: u32 = 0;
     while (i < 256) : (i += 1) {
-        idt[i] = mmu.gatedesc.new(false, mmu.SEG_KCODE << 3, @ptrToInt(&testIH), 0);
+        idt[i] = mmu.gatedesc.new(false, mmu.SEG_KCODE << 3, v[i], 0);
     }
-    idt[T_SYSCALL] = mmu.gatedesc.new(true, mmu.SEG_KCODE << 3, @ptrToInt(&testIH), mmu.DPL_USER);
+    idt[T_SYSCALL] = mmu.gatedesc.new(true, mmu.SEG_KCODE << 3, v[T_SYSCALL], mmu.DPL_USER);
 }
 
 pub fn idtinit() void {
@@ -56,7 +57,6 @@ pub fn idtinit() void {
 }
 
 export fn trap(tf: *x86.trapframe) void {
-    asm volatile ("1: jmp 1b");
     if (tf.trapno == T_SYSCALL) {
         // TODO: system call
     }
@@ -76,6 +76,8 @@ export fn trap(tf: *x86.trapframe) void {
             // Bochs generates spurious IDE1 interrupts.
         },
         T_IRQ0 + IRQ_KBD => {
+            kbd.kbdintr();
+            lapic.lapiceoi();
             // TODO: implement
         },
         T_IRQ0 + IRQ_COM1 => {
@@ -87,9 +89,4 @@ export fn trap(tf: *x86.trapframe) void {
     }
 
     // TODO: implement
-}
-
-pub fn testIH() callconv(.Naked) void {
-    asm volatile ("cli");
-    asm volatile ("hlt");
 }
