@@ -130,3 +130,31 @@ pub const taskstate = struct {
     padding1: u16,
     // TODO
 };
+
+pub const gatedesc = packed struct {
+    off_15_0: u16, // low 16 bits of offset in segment
+    cs: u16, // code segment selector
+    args: u5, // # args, 0 for interrupt/trap gates
+    rsv1: u3, // reserved (should be zero I guess)
+    typ: u4, // type (STS_{IG32, TG32})
+    s: u1, // must be 0 (system)
+    dpl: u2, // descriptor (meaning new) privilege level
+    p: u1, // Present
+    off_31_16: u16, // high bits of offset in segment
+
+    const Self = @This();
+
+    pub fn new(isTrap: bool, sel: u16, off: u32, d: u2) Self {
+        return Self {
+            .off_15_0 = @intCast(u16, off & 0xffff),
+            .cs = sel,
+            .args = 0,
+            .rsv1 = 0,
+            .typ = if(isTrap) STS_TG32 else STS_IG32,
+            .s = 0,
+            .dpl = d,
+            .p = 1,
+            .off_31_16 = @intCast(u16, off >> 16),
+        };
+    }
+};

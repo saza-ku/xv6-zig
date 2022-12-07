@@ -10,6 +10,31 @@ extern const data: u8; // defined by kernel.ld
 pub var kpgdir: [*]mmu.pde_t = undefined;
 var count: u32 = 0;
 
+comptime {
+    asm (
+        \\.global set_segreg;
+        \\.type set_segreg, @function;
+        \\set_segreg:
+        \\  movl $0x10, %eax
+        \\  movw %ax, %es
+        \\  movw %ax, %ss
+        \\  movw %ax, %ds
+        \\  movw %ax, %fs
+        \\  movw %ax, %gs
+        \\  movl $0x08, %eax
+        \\  movl $.next, %ecx
+        \\  pushw %ax
+        \\  pushl %ecx
+        \\  lret
+        \\.next:
+        \\  movl %ebp, %esp
+        \\  popl %ebp
+        \\  ret
+    );
+}
+
+extern fn set_segreg() void;
+
 pub fn seginit() void {
     var c = &mp.cpus[proc.cpuid()];
     if (proc.cpuid() == 1) {
@@ -18,8 +43,10 @@ pub fn seginit() void {
     c.*.gdt[mmu.SEG_KCODE] = mmu.segdesc.new(mmu.STA_X | mmu.STA_R, 0, 0xffffffff, mmu.DPL_KERNEL);
     c.*.gdt[mmu.SEG_KDATA] = mmu.segdesc.new(mmu.STA_W, 0, 0xffffffff, mmu.DPL_KERNEL);
     c.*.gdt[mmu.SEG_UCODE] = mmu.segdesc.new(mmu.STA_X | mmu.STA_R, 0, 0xffffffff, mmu.DPL_USER);
-    c.*.gdt[mmu.SEG_KCODE] = mmu.segdesc.new(mmu.STA_W, 0, 0xffffffff, mmu.DPL_USER);
+    c.*.gdt[mmu.SEG_UDATA] = mmu.segdesc.new(mmu.STA_W, 0, 0xffffffff, mmu.DPL_USER);
     x86.lgdt(@ptrToInt(&c.*.gdt), @sizeOf(@TypeOf(c.*.gdt)));
+
+    set_segreg();
 }
 
 // Return the address of the PTE in page table pgdir

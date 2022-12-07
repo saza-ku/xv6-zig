@@ -8,12 +8,13 @@ const mmu = @import("mmu.zig");
 const mp = @import("mp.zig");
 const picirq = @import("picirq.zig");
 const spinlock = @import("spinlock.zig");
+const trap = @import("trap.zig");
 const uart = @import("uart.zig");
 const vm = @import("vm.zig");
 
 extern const end: u8;
 
-export fn main() callconv(.Naked) noreturn {
+export fn main() noreturn {
     const end_addr = @ptrToInt(&end);
     kalloc.kinit1(end_addr, memlayout.p2v(4 * 1024 * 1024));
 
@@ -26,12 +27,14 @@ export fn main() callconv(.Naked) noreturn {
     console.consoleinit();
 
     uart.uartinit();
+    trap.tvinit();
+    trap.idtinit();
 
     console.initialize();
 
     locktest();
-    console.puts("Hello, world!");
 
+    asm volatile("sti");
     while (true) {}
 }
 
@@ -57,4 +60,5 @@ fn locktest() void {
     l.acquire();
     l.release();
     l.acquire();
+    l.release();
 }

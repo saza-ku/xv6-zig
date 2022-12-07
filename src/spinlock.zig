@@ -39,7 +39,7 @@ pub const spinlock = struct {
         while (x86.xchg(&self.locked, 1) != 0) {}
 
         self.cpu = proc.mycpu();
-        self.getcallerpcs();
+        // self.getcallerpcs();
     }
 
     pub fn release(self: *Self) void {
@@ -69,8 +69,9 @@ pub const spinlock = struct {
     }
 
     // TODO: This function might be broken.
-    // When file.devsw is set in consoleinit,
+    // When file.devsw is set in consoleinit or use kbdintr,
     // this function causes fault.
+    // (It might fail when we handle function pointer.)
     fn getcallerpcs(self: *Self) void {
         var ebp_addr = asm ("mov %%ebp, %%eax"
         : [ret] "={eax}" (-> usize)

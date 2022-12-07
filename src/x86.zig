@@ -48,6 +48,19 @@ pub fn lgdt(p: usize, size: u16) void {
     );
 } 
 
+pub fn lidt(p: usize, size: u16) void {
+    const pd = [3]u16 {
+        size - 1,
+        @intCast(u16, p & 0xffff),
+        @intCast(u16, p >> 16),
+    };
+
+    asm volatile ("lidt (%%eax)"
+        :
+        : [pd] "{eax}" (@ptrToInt(&pd))
+    );
+}
+
 pub fn lcr3(addr: usize) void {
     asm volatile (
         "movl %[addr], %%cr3"
@@ -82,7 +95,7 @@ pub fn xchg(addr: *u32, newval: u32) u32 {
 
 // Layout of the trap frame built on the stack by the
 // hardware and by trapasm.S, and passed to trap().
-pub const trapframe = struct {
+pub const trapframe = packed struct {
     edi: u32,
     esi: u32,
     ebp: u32,

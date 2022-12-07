@@ -1,9 +1,10 @@
 const std = @import("std");
 const ioapic = @import("ioapic.zig");
 const file = @import("file.zig");
+const kbd = @import("kbd.zig");
 const proc = @import("proc.zig");
 const spinlock = @import("spinlock.zig");
-const traps = @import("traps.zig");
+const trap = @import("trap.zig");
 const uart = @import("uart.zig");
 const x86 = @import("x86.zig");
 const fmt = @import("std").fmt;
@@ -21,7 +22,7 @@ pub var cons = struct {
     .locking = false,
 };
 
-const BACKSPACE = std.ascii.control_code.BS;
+const BACKSPACE = std.ascii.control_code.bs;
 const CRTPORT = 0x3d4;
 var crt = @intToPtr([*]u16, memlayout.p2v(0xb8000)); // CGA memory
 
@@ -38,8 +39,8 @@ fn cgaputc(c: u32) void {
             pos -= 1;
         }
     } else {
-        pos += 1;
         crt[pos] = (@intCast(u16, c & 0xff)) | 0x0700; // black on white
+        pos += 1;
     }
 
     if (pos < 0 or pos > 25 * 80) {
@@ -92,8 +93,52 @@ var input = struct {
     .e = 0,
 };
 
-fn ctrl(x: u8) u8 {
-    return x - '@';
+// TODO: we could make getc fn() ?u8
+pub fn consoleintr(getc: *const fn() ?u8) void {
+    var doprocdump: bool = false;
+
+    cons.lock.acquire();
+    while (true) {
+        var c = getc() orelse break;
+
+        switch(c) {
+            kbd.ctrl('P') => { // Process listing.
+                doprocdump = true;
+            },
+
+            kbd.ctrl('U') => { // Kill line.
+            while (input.e != input.w and
+                input.buf[(input.e-1) % INPUT_BUF] != '\n') {
+                    input.e -%= 1;
+                    consputc(BACKSPACE);
+                }
+            },
+
+            kbd.ctrl('H'), '\x7f' => { //Backspace
+                if (input.e != input.w) {
+                    input.e -%= 1;
+                    consputc(BACKSPACE);
+                }
+            },
+
+            else => {
+                if (c != 0 and input.e -% input.r < INPUT_BUF) {
+                    c = if (c == '\r') '\n' else c;
+                    input.buf[input.e % INPUT_BUF] = c;
+                    input.e +%= 1;
+                    consputc(c);
+                    if (c == '\n' or c == kbd.ctrl('D') or input.e == input.r +% INPUT_BUF) {
+                        input.w = input.e;
+                        proc.wakeup(@ptrToInt(&input.r));
+                    }
+                }
+            },
+        }
+    }
+    cons.lock.release();
+    if (doprocdump) {
+        // TODO: procdump();
+    }
 }
 
 pub fn consoleread(ip: *file.inode, dst: [*]u8, n: u32) ?u32 {
@@ -114,7 +159,7 @@ pub fn consoleread(ip: *file.inode, dst: [*]u8, n: u32) ?u32 {
         }
         input.r = (input.r + 1) % INPUT_BUF;
         const c = input.buf[input.r];
-        if (c == ctrl('D')) {
+        if (c == kbd.ctrl('D')) {
             if (read_size > 0) {
                 // Save ^D for next time, to make sure
                 // caller gets a 0-byte result.
@@ -134,7 +179,7 @@ pub fn consoleread(ip: *file.inode, dst: [*]u8, n: u32) ?u32 {
 pub fn consoleinit() void {
     cons.locking = true;
 
-    ioapic.ioapicenable(traps.IRQ_KBD, 0);
+    ioapic.ioapicenable(trap.IRQ_KBD, 0);
 }
 
 pub fn consolewrite(ip: *file.inode, buf: []const u8, n: u32) u32 {
