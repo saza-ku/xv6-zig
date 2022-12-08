@@ -1,5 +1,6 @@
 const std = @import("std");
 const console = @import("console.zig");
+const ide = @import("ide.zig");
 const ioapic = @import("ioapic.zig");
 const kalloc = @import("kalloc.zig");
 const lapic = @import("lapic.zig");
@@ -28,6 +29,7 @@ export fn main() noreturn {
 
     uart.uartinit();
     trap.tvinit();
+    ide.ideinit();
     trap.idtinit();
 
     console.initialize();
