@@ -27,11 +27,11 @@ pub const buf = struct {
     blockno: u32,
     lock: sleeplock.sleeplock,
     refcnt: u32,
-    prev: *buf, // LRU cache list
-    next: *buf,
-    qnext: *buf, // disk queue
+    prev: ?*buf, // LRU cache list
+    next: ?*buf,
+    qnext: ?*buf, // disk queue
     data: [fs.BSIZE]u8,
 };
 
-const B_VALID = 0x2; // buffer has been read from disk
-const B_DIRTY = 0x4; // buffer needs to be written to disk
+pub const B_VALID = 0x2; // buffer has been read from disk
+pub const B_DIRTY = 0x4; // buffer needs to be written to disk

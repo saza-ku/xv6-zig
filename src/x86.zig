@@ -16,6 +16,13 @@ pub fn in(comptime Type: type, port: u16) Type {
     };
 }
 
+pub fn insl(port: u16, addr: usize, cnt: u32) void {
+    asm volatile("cld; rep insl"
+        : [a] "=D" (addr), [b] "=c" (cnt)
+        : [c] "d" (port), [d] "0" (addr), [e] "1" (cnt)
+        : "memory", "cc");
+}
+
 pub fn out(port: u16, data: anytype) void {
     switch (@TypeOf(data)) {
         u8 => asm volatile ("outb %[data], %[port]"
@@ -35,6 +42,13 @@ pub fn out(port: u16, data: anytype) void {
         ),
         else => @compileError("Invalid data type. Only u8, u16 or u32, found: " ++ @typeName(@TypeOf(data))),
     }
+}
+
+pub fn outsl(port: u16, addr: usize, cnt: u32) void {
+    asm volatile("cld; rep outsl"
+        : [a] "=S" (addr), [b] "=c" (cnt)
+        : [c] "d" (port), [d] "0" (addr), [f] "1" (cnt)
+        : "cc");
 }
 
 pub fn lgdt(p: usize, size: u16) void {
