@@ -1,1 +1,1 @@
-const BSIZE = 512;
+pub const BSIZE = 512;

@@ -1,4 +1,5 @@
 const std = @import("std");
+const bio = @import("bio.zig");
 const console = @import("console.zig");
 const ide = @import("ide.zig");
 const ioapic = @import("ioapic.zig");
@@ -29,6 +30,7 @@ export fn main() noreturn {
 
     uart.uartinit();
     trap.tvinit();
+    bio.binit();
     ide.ideinit();
     trap.idtinit();
 

@@ -7,7 +7,7 @@ pub const sleeplock = struct {
     lk: spinlock.spinlock, // spinlock protecting this sleep lock
 
     // For debugging:
-    name: []*const u8, // Name of lock
+    name: []const u8, // Name of lock
     pid: u32, // Process hoding lock
 
     const Self = @This();
