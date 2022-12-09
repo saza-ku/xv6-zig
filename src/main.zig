@@ -27,7 +27,6 @@ export fn main() noreturn {
     picirq.picinit();
     ioapic.ioapicinit();
     console.consoleinit();
-
     uart.uartinit();
     trap.tvinit();
     bio.binit();
@@ -40,6 +39,14 @@ export fn main() noreturn {
 
     asm volatile("sti");
     while (true) {}
+}
+
+// Start the non-boot (AP) processors.
+fn startothers() void {
+    // Write entry code to unused memory at 0x7000.
+    // The linker has placed the image of entryother.S in
+    // _binary_entryother_start.
+
 }
 
 // The boot page table used in entry.S and entryother.S.

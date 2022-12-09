@@ -1,5 +1,6 @@
 const console = @import("console.zig");
 const sleeplock = @import("sleeplock.zig");
+const spinlock = @import("spinlock.zig");
 const param = @import("param.zig");
 
 pub const file = struct {
@@ -58,6 +59,14 @@ pub var devsw: [param.NDEV]devsw_t = init: {
         }
     }
     break :init initial_value;
+};
+
+var ftable = struct {
+    lock: spinlock.spinlock,
+    file: [param.NFILE]file,
+} {
+    .lock = spinlock.spinlock.init("file"),
+    .file = undefined,
 };
 
 pub const CONSOLE = 1;
