@@ -27,7 +27,6 @@ export fn main() noreturn {
     picirq.picinit();
     ioapic.ioapicinit();
     console.consoleinit();
-
     uart.uartinit();
     trap.tvinit();
     bio.binit();
