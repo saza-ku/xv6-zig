@@ -173,6 +173,7 @@ fn mpconfig(p: **mp) ?*mpconf {
     return conf;
 }
 
+// TODO: we cannot recognize ap except for qemu on Ubuntu 18.04
 pub fn mpinit() void {
     var pmp: *mp = undefined;
     var conf = mpconfig(&pmp) orelse return; // TODO: panic if null

@@ -92,6 +92,7 @@ pub fn lapiceoi() void {
 
 const CMOS_PORT = 0x70;
 const CMOS_RETURN = 0x71;
+var wrv = @intToPtr([*]u8, memlayout.p2v((0x40 << 4) | 0x67));
 
 pub fn lapicstartap(apicid: u16, addr: usize) void {
     // "The BSP must initialize CMOS shutdown code to 0AH
@@ -99,9 +100,10 @@ pub fn lapicstartap(apicid: u16, addr: usize) void {
     // the AP startup code prior to the [universal startup algorithm].
     x86.out(CMOS_PORT, @as(u8, 0xF));
     x86.out(CMOS_PORT + 1, @as(u8, 0x0A));
-    var wrv = @intToPtr([*]u16, memlayout.p2v((0x40 << 4) | 0x67));
-    wrv[0] = 0;
-    wrv[1] = @intCast(u16, addr) >> 4;
+    wrv[0] = @intCast(u8, addr >> 28);
+    wrv[1] = @intCast(u8, (addr >> 20) & 0xFF);
+    wrv[2] = @intCast(u8, (addr >> 12) & 0xFF);
+    wrv[3] = @intCast(u8, (addr >> 4) & 0xFF);
 
     // "Universal startup algorithm."
     // Send INIT (level-triggered) interrupt to reset other CPU.
@@ -119,7 +121,7 @@ pub fn lapicstartap(apicid: u16, addr: usize) void {
     var i: u8 = 0;
     while (i < 2) : (i += 1) {
         lapicw(ICRHI, @as(u32, apicid) << 24);
-        lapicw(ICRLO, STARTUP | (addr >> 12));
+        lapicw(ICRLO, STARTUP | @intCast(u32, addr >> 12));
         microdelay(200);
     }
 }

@@ -84,7 +84,7 @@ export fn trap(tf: *x86.trapframe) void {
             // TODO: implement
         },
         else => {
-            asm volatile ("movl %[eip], %%eax" : : [eip] "r" (tf.eip));
+            asm volatile ("movl %[trapno], %%eax" : : [trapno] "r" (tf.trapno));
             asm volatile ("1: jmp 1b");
         },
     }

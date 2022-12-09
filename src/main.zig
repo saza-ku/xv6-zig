@@ -60,7 +60,8 @@ fn startothers() void {
     // Write entry code to unused memory at 0x7000.
     // The linker has placed the image of entryother.S in
     // _binary_entryother_start.
-    var args = @intToPtr([*]usize, memlayout.p2v(0x7000));
+    var args = @intToPtr([*]usize, memlayout.p2v(0x8000));
+    @memcpy(@intToPtr([*]u8, memlayout.p2v(0x7000)), @intToPtr([*]u8, @ptrToInt(&entry.entry_others)), 0x800);
     for (mp.cpus) |*c, i| {
         if (i == mp.ncpu) {
             break;
@@ -74,9 +75,7 @@ fn startothers() void {
         //args[1] = &mpenter;
         args[2] = @ptrToInt(&entrypgdir);
 
-        asm volatile ("1: jmp 1b");
-
-        lapic.lapicstartap(c.apicid, memlayout.v2p(@ptrToInt(&entry.entry_others)));
+        lapic.lapicstartap(c.apicid, 0x7000);
     }
 }
 
