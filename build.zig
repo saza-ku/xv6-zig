@@ -29,17 +29,14 @@ pub fn build(b: *Builder) void {
     const mode = b.standardReleaseOptions();
 
     // objects for assembly
-    const main_obj = b.addObject("main", "src/main.zig");
-    main_obj.setTarget(target);
-    main_obj.setBuildMode(mode);
 
-    const kernel = b.addExecutable("kernel.elf", "src/entry.zig");
+    const kernel = b.addExecutable("kernel.elf", "src/main.zig");
     kernel.setTarget(target);
     kernel.setBuildMode(mode);
     kernel.setLinkerScriptPath(.{ .path = "src/kernel.ld" });
     kernel.addAssemblyFile("src/trapasm.S");
     kernel.addAssemblyFile("src/vector.S");
-    kernel.addObject(main_obj);
+    kernel.addAssemblyFile("src/segment.S");
     kernel.code_model = .kernel;
     kernel.install();
 

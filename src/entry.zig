@@ -20,6 +20,32 @@ comptime {
     );
 }
 
+comptime {
+    asm (
+        \\.code16
+        \\.global entry_others;
+        \\.type entry_others, @function;
+        \\entry_others:
+        \\  cli
+        \\  jmp spin
+        \\
+        \\spin:
+        \\  jmp     spin
+        \\
+        \\.p2align 2
+        //\\gdt:
+        //\\  SEG_NULLASM
+        //\\  SEG_ASM(STA_X|STA_R, 0, 0xffffffff)
+        //\\  SEG_ASM(STA_W, 0, 0xffffffff)
+        //\\
+        //\\
+        //\\gdtdesc:
+        //\\  .word   (gdtdesc - gdt - 1)
+        //\\  .long   gdt
+
+    );
+}
+
 export fn start() align(16) callconv(.Naked) noreturn {
     asm volatile (
     // Turn on page size extension for 4Mbyte pages
@@ -59,3 +85,5 @@ export fn start() align(16) callconv(.Naked) noreturn {
     );
     while (true) {}
 }
+
+pub extern fn entry_others() callconv(.Naked) noreturn;

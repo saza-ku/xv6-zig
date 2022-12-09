@@ -1,4 +1,6 @@
+const memlayout = @import("memlayout.zig");
 const trap = @import("trap.zig");
+const x86 = @import("x86.zig");
 
 // Local APIC registers, divided by 4 for use as []u32 indices.
 const ID = 0x0020 / @sizeOf(u32); // ID
@@ -86,6 +88,40 @@ pub fn lapicid() u32 {
 
 pub fn lapiceoi() void {
     lapicw(EOI, 0);
+}
+
+const CMOS_PORT = 0x70;
+const CMOS_RETURN = 0x71;
+
+pub fn lapicstartap(apicid: u16, addr: usize) void {
+    // "The BSP must initialize CMOS shutdown code to 0AH
+    // and the warm reset vector (DWORD based at 40:67) to point at
+    // the AP startup code prior to the [universal startup algorithm].
+    x86.out(CMOS_PORT, @as(u8, 0xF));
+    x86.out(CMOS_PORT + 1, @as(u8, 0x0A));
+    var wrv = @intToPtr([*]u16, memlayout.p2v((0x40 << 4) | 0x67));
+    wrv[0] = 0;
+    wrv[1] = @intCast(u16, addr) >> 4;
+
+    // "Universal startup algorithm."
+    // Send INIT (level-triggered) interrupt to reset other CPU.
+    lapicw(ICRHI, @intCast(u32, apicid) << 24);
+    lapicw(ICRLO, INIT | LEVEL | ASSERT);
+    microdelay(200);
+    lapicw(ICRLO, INIT | LEVEL);
+    microdelay(100); // should be 10ms, but too slow in Bochs!
+
+    // Send startup IPI (twice!) to enter code.
+    // Regular hardware is supposed to only accept a STARTUP
+    // when it is in the halted state due to an INIT.  So the second
+    // should be ignored, but it is part of the official Intel algorithm.
+    // Bochs complains about the second one.  Too bad for Bochs.
+    var i: u8 = 0;
+    while (i < 2) : (i += 1) {
+        lapicw(ICRHI, @as(u32, apicid) << 24);
+        lapicw(ICRLO, STARTUP | (addr >> 12));
+        microdelay(200);
+    }
 }
 
 // Spin for a given number of microseconds.

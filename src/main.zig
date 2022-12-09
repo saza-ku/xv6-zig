@@ -1,6 +1,7 @@
 const std = @import("std");
 const bio = @import("bio.zig");
 const console = @import("console.zig");
+const entry = @import("entry.zig");
 const ide = @import("ide.zig");
 const ioapic = @import("ioapic.zig");
 const kalloc = @import("kalloc.zig");
@@ -8,7 +9,9 @@ const lapic = @import("lapic.zig");
 const memlayout = @import("memlayout.zig");
 const mmu = @import("mmu.zig");
 const mp = @import("mp.zig");
+const param = @import("param.zig");
 const picirq = @import("picirq.zig");
+const proc = @import("proc.zig");
 const spinlock = @import("spinlock.zig");
 const trap = @import("trap.zig");
 const uart = @import("uart.zig");
@@ -30,14 +33,25 @@ export fn main() noreturn {
     uart.uartinit();
     trap.tvinit();
     bio.binit();
-    ide.ideinit();
+//    ide.ideinit();
     trap.idtinit();
 
     console.initialize();
 
+    startothers();
+
     locktest();
 
+
     asm volatile("sti");
+
+    if (mp.ncpu == 1) {
+        console.puts("npuc: 1");
+    } else if (mp.ncpu == 2) {
+        console.puts("proc: 2");
+    } else {
+        console.puts("proc: too many!");
+    }
     while (true) {}
 }
 
@@ -46,7 +60,24 @@ fn startothers() void {
     // Write entry code to unused memory at 0x7000.
     // The linker has placed the image of entryother.S in
     // _binary_entryother_start.
+    var args = @intToPtr([*]usize, memlayout.p2v(0x7000));
+    for (mp.cpus) |*c, i| {
+        if (i == mp.ncpu) {
+            break;
+        }
+        if (c == proc.mycpu()) {
+            continue;
+        }
 
+        const stack = kalloc.kalloc() orelse unreachable; // TODO: error handling
+        args[0] = @intCast(u32, stack + param.KSTACKSIZE);
+        //args[1] = &mpenter;
+        args[2] = @ptrToInt(&entrypgdir);
+
+        asm volatile ("1: jmp 1b");
+
+        lapic.lapicstartap(c.apicid, memlayout.v2p(@ptrToInt(&entry.entry_others)));
+    }
 }
 
 // The boot page table used in entry.S and entryother.S.

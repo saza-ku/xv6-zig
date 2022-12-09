@@ -12,8 +12,8 @@ pub const CR0_PG: usize = 0x80000000; // Paging
 pub const CR4_PSE: usize = 0x00000010; // Page size extension
 
 // various segment selectors.
-pub const SEG_KCODE = 1; // kernel code
-pub const SEG_KDATA = 2; // kernel data+stack
+pub const SEG_KCODE: u8 = 1; // kernel code
+pub const SEG_KDATA: u8 = 2; // kernel data+stack
 pub const SEG_UCODE = 3; // user code
 pub const SEG_UDATA = 4; // user data+stack
 pub const SEG_TSS = 5; // this process's task state
