@@ -32,6 +32,8 @@ export fn main() noreturn {
     bio.binit();
     ide.ideinit();
     trap.idtinit();
+    // TODO: startothers()
+    kalloc.kinit2(memlayout.p2v(4 * 1024 * 1024), memlayout.p2v(memlayout.PHYSTOP));
 
     console.initialize();
 

@@ -22,6 +22,11 @@ pub fn kinit1(vstart: usize, vend: usize) void {
     freerange(vstart, vend);
 }
 
+pub fn kinit2(vstart: usize, vend: usize) void {
+    freerange(vstart, vend);
+    kmem.use_lock = true;
+}
+
 fn freerange(vstart: usize, vend: usize) void {
     var p = mmu.pgroundup(vstart);
     while (p + mmu.PGSIZE <= vend) : (p += mmu.PGSIZE) {
