@@ -7,12 +7,23 @@ ENTRY(_start)
 
 SECTIONS
 {
+	. = 0x6000;
+	.text.multiboot : {
+		KEEP(*(.text.multiboot))
+	}
+
+	. = 0x7000;
+	.text.others : {
+		KEEP(*(.text.others))
+	}
+	.rodata.others : {
+		KEEP(*(.rodata.others))
+	}
 	/* Link the kernel at this address: "." means the current address */
         /* Must be equal to KERNLINK */
 	. = 0x80100000;
 
 	.text : AT(0x100000) {
-        KEEP(*(.multiboot))
 		*(.text .stub .text.* .gnu.linkonce.t.*)
 	}
 

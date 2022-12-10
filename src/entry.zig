@@ -4,13 +4,16 @@ const param = @import("param.zig");
 comptime {
     asm (
         \\.align 4
-        \\.section ".multiboot"
+        \\.section ".text.multiboot"
         \\multiboot_header:
         \\  .long 0x1badb002
         \\  .long 0
         \\  .long (0 - 0x1badb002)
     );
 }
+
+
+
 
 comptime {
     asm (
