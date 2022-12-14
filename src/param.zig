@@ -3,6 +3,7 @@ pub const KSTACKSIZE: usize = 4096; // size of per-process kernel stack
 pub const NCPU = 8; // maximum number of CPUs
 pub const NOFILE: u32 = 16; // open files per process
 pub const NFILE = 100; // open files per system
+pub const NINODE = 50; // maximum number of active i-nodes
 pub const NDEV = 10; // maximum major device number
 pub const ROOTDEV = 1; // device number of file system root disk
 pub const MAXARG = 32; // max exec arguments

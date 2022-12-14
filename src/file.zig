@@ -18,7 +18,7 @@ pub const inode = struct {
     dev: u32, // Device number
     inum: u32, // // Inode number
     ref: u32, // Reference count
-    lk: sleeplock.sleeplock, // protects everything below here
+    lock: sleeplock.sleeplock, // protects everything below here
     valid: u32, // inode has been read from disk?
 
     typ: u16, // copy of disk inode

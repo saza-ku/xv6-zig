@@ -56,6 +56,31 @@ pub const buf = struct {
         self.flags |= B_DIRTY;
         ide.iderw(self);
     }
+
+    pub fn release(self: *Self) void {
+        if (!self.lock.holding()) {
+            asm volatile("1: jmp 1b"); // TODO: error handling
+        }
+
+        self.lock.release();
+
+        bcache.lock.acquire();
+        defer bcache.lock.release();
+        self.*.refcnt -= 1;
+        if (self.refcnt == 0) {
+            // no onw is wating for it.
+            self.*.next.*.prev = self.prev;
+            self.*.prev.*.next = self.next;
+            self.*.next = bcache.head.next;
+            self.*.prev = &bcache.head;
+            bcache.head.next.*.prev = self;
+            bcache.head.next = self;
+        }
+    }
+
+    pub fn data_ptr(self: *Self) [*]u8 {
+        return @ptrCast([*]u8, &self.data);
+    }
 };
 
 pub const B_VALID = 0x2; // buffer has been read from disk
