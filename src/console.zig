@@ -9,7 +9,6 @@ const uart = @import("uart.zig");
 const x86 = @import("x86.zig");
 const fmt = @import("std").fmt;
 const mem = @import("std").mem;
-const Writer = @import("std").io.Writer;
 const memlayout = @import("memlayout.zig");
 
 var panicked: bool = false;
@@ -274,10 +273,19 @@ fn callback(_: void, string: []const u8) error{}!usize {
     return string.len;
 }
 
+/// The errors that can occur when logging
+const LoggingError = error{};
+
+/// The Writer for the format function
+const Writer = std.io.Writer(void, LoggingError, logCallback);
+
 pub fn printf(comptime format: []const u8, args: anytype) void {
-    var buf: [1024]u8 = undefined;
-    var fba = std.heap.FixedBufferAllocator.init(buf[0..1024]);
-    const allocator = fba.allocator();
-    const s = fmt.allocPrint(allocator, format, args) catch "error";
-    puts(s);
+    fmt.format(Writer{ .context = {} }, format, args) catch unreachable;
+}
+
+fn logCallback(context: void, str: []const u8) LoggingError!usize {
+    // Suppress unused var warning
+    _ = context;
+    puts(str);
+    return str.len;
 }

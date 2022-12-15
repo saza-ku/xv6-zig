@@ -30,7 +30,7 @@ export fn main() noreturn {
     uart.uartinit();
     trap.tvinit();
     bio.binit();
-    ide.ideinit();
+    // ide.ideinit();
     trap.idtinit();
     // TODO: startothers()
     kalloc.kinit2(memlayout.p2v(4 * 1024 * 1024), memlayout.p2v(memlayout.PHYSTOP));
@@ -38,6 +38,7 @@ export fn main() noreturn {
     console.initialize();
 
     locktest();
+    console.printf("hoge: {}", .{ 3 });
 
     asm volatile("sti");
     while (true) {}
