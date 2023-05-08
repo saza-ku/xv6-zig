@@ -42,15 +42,15 @@ pub const inode = struct {
 };
 
 pub const devsw_t = struct {
-    read: *const fn(ip: *inode, dst: [*]u8, n: u32) ?u32,
-    write: *const fn(ip: *inode, buf: []const u8, n: u32) u32,
+    read: *const fn (ip: *inode, dst: [*]u8, n: u32) ?u32,
+    write: *const fn (ip: *inode, buf: []const u8, n: u32) u32,
 };
 
 pub var devsw: [param.NDEV]devsw_t = init: {
     var initial_value: [param.NDEV]devsw_t = undefined;
-    for (initial_value) |*pt, i| {
+    for (initial_value, 0..) |*pt, i| {
         if (i == CONSOLE) {
-            pt.* = devsw_t {
+            pt.* = devsw_t{
                 .read = console.consoleread,
                 .write = console.consolewrite,
             };
@@ -64,7 +64,7 @@ pub var devsw: [param.NDEV]devsw_t = init: {
 var ftable = struct {
     lock: spinlock.spinlock,
     file: [param.NFILE]file,
-} {
+}{
     .lock = spinlock.spinlock.init("file"),
     .file = undefined,
 };

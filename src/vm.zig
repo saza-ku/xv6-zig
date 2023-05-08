@@ -55,7 +55,9 @@ fn walkpgdir(pgdir: [*]mmu.pde_t, va: usize, alloc: bool) ?*mmu.pte_t {
         }
         pgtab = @intToPtr([*]mmu.pte_t, kalloc.kalloc() orelse return null);
         // Make sure all those PTE_P bits are zero.
-        for (@ptrCast([*]u8, pgtab)[0..mmu.PGSIZE]) |*b| { b.* = 0;}
+        for (@ptrCast([*]u8, pgtab)[0..mmu.PGSIZE]) |*b| {
+            b.* = 0;
+        }
         // The permissions here are overly generous, but they can
         // be further restricted by the permissions in the page table
         // entries, if necessary.
@@ -89,7 +91,9 @@ fn mappages(pgdir: [*]mmu.pde_t, va: usize, size: usize, pa: usize, perm: usize)
 // Set up kernel part of a page table.
 fn setupkvm() ?[*]mmu.pde_t {
     var pgdir = @intToPtr([*]mmu.pde_t, kalloc.kalloc() orelse return null);
-    for (@ptrCast([*]u8, pgdir)[0..mmu.PGSIZE]) |*b| { b.* = 0; }
+    for (@ptrCast([*]u8, pgdir)[0..mmu.PGSIZE]) |*b| {
+        b.* = 0;
+    }
     if (memlayout.p2v(memlayout.PHYSTOP) > memlayout.DEVSPACE) {
         sh.panic("PHYSTOP too high");
     }

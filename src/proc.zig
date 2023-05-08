@@ -19,7 +19,12 @@ pub const cpu = struct {
 };
 
 pub const procstate = enum {
-    UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE,
+    UNUSED,
+    EMBRYO,
+    SLEEPING,
+    RUNNABLE,
+    RUNNING,
+    ZOMBIE,
 };
 
 // Saved registers for kernel context switches.
@@ -60,7 +65,7 @@ pub const proc = struct {
 var ptable = struct {
     lock: spinlock.spinlock,
     proc: [param.NPROC]proc,
-} {
+}{
     .lock = spinlock.spinlock.init("ptable"),
     .proc = undefined,
 };
@@ -124,9 +129,9 @@ pub fn sleep(chan: usize, lk: *spinlock.spinlock) void {
     p.*.chan = 0;
 
     // Reacquire original lock.
-    if(lk != &ptable.lock){
-      ptable.lock.release();
-      lk.acquire();
+    if (lk != &ptable.lock) {
+        ptable.lock.release();
+        lk.acquire();
     }
 }
 

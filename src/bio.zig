@@ -51,7 +51,7 @@ pub const buf = struct {
 
     pub fn write(self: *Self) void {
         if (!self.lock.holding()) {
-            asm volatile("1: jmp 1b"); // TODO: error handling
+            asm volatile ("1: jmp 1b"); // TODO: error handling
         }
         self.flags |= B_DIRTY;
         ide.iderw(self);
@@ -65,7 +65,7 @@ var bcache = struct {
     lock: spinlock.spinlock,
     buf: [param.NBUF]buf,
     head: buf,
-} {
+}{
     .lock = spinlock.spinlock.init("bcache"),
     .buf = undefined,
     .head = undefined,

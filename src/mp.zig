@@ -29,7 +29,8 @@ const mp = packed struct {
         if (self.signature1 != '_' or
             self.signature2 != 'M' or
             self.signature3 != 'P' or
-            self.signature4 != '_') {
+            self.signature4 != '_')
+        {
             return false;
         }
 
@@ -67,7 +68,8 @@ const mpconf = packed struct {
         if (self.signature1 != 'P' or
             self.signature2 != 'C' or
             self.signature3 != 'M' or
-            self.signature4 != 'P') {
+            self.signature4 != 'P')
+        {
             return false;
         }
 
@@ -118,7 +120,7 @@ const entry = enum(u8) {
 // Look for an MP structure in the len bytes at addr
 fn mpsearch1(a: usize, len: usize) ?*mp {
     var addr = memlayout.p2v(a);
-    var slice = @intToPtr([*]mp, addr)[0..len / @sizeOf(mp)];
+    var slice = @intToPtr([*]mp, addr)[0 .. len / @sizeOf(mp)];
     for (slice) |*p| {
         if (p.isValid()) {
             return p;
@@ -184,7 +186,7 @@ pub fn mpinit() void {
     const e = @ptrToInt(conf) + conf.length;
     while (p < e) {
         const typ = @intToEnum(entry, @intToPtr(*u8, p).*);
-        switch(typ) {
+        switch (typ) {
             .MPPROC => {
                 var proc_entry = @intToPtr(*mpproc, p);
                 if (ncpu < param.NCPU) {

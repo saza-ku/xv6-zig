@@ -17,10 +17,14 @@ pub fn in(comptime Type: type, port: u16) Type {
 }
 
 pub fn insl(port: u16, addr: usize, cnt: u32) void {
-    asm volatile("cld; rep insl"
-        : [a] "=D" (addr), [b] "=c" (cnt)
-        : [c] "d" (port), [d] "0" (addr), [e] "1" (cnt)
-        : "memory", "cc");
+    asm volatile ("cld; rep insl"
+        : [a] "=D" (addr),
+          [b] "=c" (cnt),
+        : [c] "d" (port),
+          [d] "0" (addr),
+          [e] "1" (cnt),
+        : "memory", "cc"
+    );
 }
 
 pub fn out(port: u16, data: anytype) void {
@@ -45,25 +49,29 @@ pub fn out(port: u16, data: anytype) void {
 }
 
 pub fn outsl(port: u16, addr: usize, cnt: u32) void {
-    asm volatile("cld; rep outsl"
-        : [a] "=S" (addr), [b] "=c" (cnt)
-        : [c] "d" (port), [d] "0" (addr), [f] "1" (cnt)
-        : "cc");
+    asm volatile ("cld; rep outsl"
+        : [a] "=S" (addr),
+          [b] "=c" (cnt),
+        : [c] "d" (port),
+          [d] "0" (addr),
+          [f] "1" (cnt),
+        : "cc"
+    );
 }
 
 pub fn lgdt(p: usize, size: u16) void {
-    const pd = [3]u16 {
+    const pd = [3]u16{
         size - 1, @intCast(u16, p & 0xffff), @intCast(u16, p >> 16),
     };
 
     asm volatile ("lgdt (%%eax)"
-    :
-    : [pd] "{eax}" (@ptrToInt(&pd)),
+        :
+        : [pd] "{eax}" (@ptrToInt(&pd)),
     );
-} 
+}
 
 pub fn lidt(p: usize, size: u16) void {
-    const pd = [3]u16 {
+    const pd = [3]u16{
         size - 1,
         @intCast(u16, p & 0xffff),
         @intCast(u16, p >> 16),
@@ -71,13 +79,12 @@ pub fn lidt(p: usize, size: u16) void {
 
     asm volatile ("lidt (%%eax)"
         :
-        : [pd] "{eax}" (@ptrToInt(&pd))
+        : [pd] "{eax}" (@ptrToInt(&pd)),
     );
 }
 
 pub fn lcr3(addr: usize) void {
-    asm volatile (
-        "movl %[addr], %%cr3"
+    asm volatile ("movl %[addr], %%cr3"
         :
         : [addr] "{eax}" (addr),
     );
@@ -86,24 +93,23 @@ pub fn lcr3(addr: usize) void {
 pub fn readeflags() u32 {
     return asm volatile ("pushfl; popl %[eflags]"
         : [eflags] "={eax}" (-> u32),
-        :
     );
 }
 
 pub fn cli() void {
-    asm volatile("cli");
+    asm volatile ("cli");
 }
 
 pub fn sti() void {
-    asm volatile("sti");
+    asm volatile ("sti");
 }
 
 pub fn xchg(addr: *u32, newval: u32) u32 {
     return asm volatile ("lock; xchgl (%[addr]), %[newval]"
-            : [result] "={eax}" (-> u32),
-            : [addr] "r" (addr),
-              [newval] "{eax}" (newval),
-            : "memory"
+        : [result] "={eax}" (-> u32),
+        : [addr] "r" (addr),
+          [newval] "{eax}" (newval),
+        : "memory"
     );
 }
 

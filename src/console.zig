@@ -17,7 +17,7 @@ var panicked: bool = false;
 pub var cons = struct {
     lock: spinlock.spinlock,
     locking: bool,
-} {
+}{
     .lock = spinlock.spinlock.init("console"),
     .locking = false,
 };
@@ -48,26 +48,26 @@ fn cgaputc(c: u32) void {
     }
 
     if (pos / 80 >= 24) { // Scroll up.
-        for (crt[80..24 * 80]) |b, i| {
+        for (crt[80 .. 24 * 80], 0..) |b, i| {
             crt[i] = b;
         }
         pos -= 80;
-        for (crt[pos..pos + 24 * 80 - pos]) |*b| {
+        for (crt[pos .. pos + 24 * 80 - pos]) |*b| {
             b.* = 0;
         }
     }
 
     x86.out(CRTPORT, @as(u8, 14));
-    x86.out(CRTPORT+1,@intCast(u8, pos >> 8));
+    x86.out(CRTPORT + 1, @intCast(u8, pos >> 8));
     x86.out(CRTPORT, @as(u8, 15));
-    x86.out(CRTPORT+1,@intCast(u8, pos & 0xff));
+    x86.out(CRTPORT + 1, @intCast(u8, pos & 0xff));
     crt[pos] = ' ' | 0x0700;
 }
 
 fn consputc(c: u8) void {
     if (panicked) {
         x86.cli();
-        while(true) {}
+        while (true) {}
     }
 
     if (c == BACKSPACE) {
@@ -86,7 +86,7 @@ var input = struct {
     r: usize, // Read index
     w: usize, // Write index
     e: usize, // Edit index
-} {
+}{
     .buf = undefined,
     .r = 0,
     .w = 0,
@@ -94,21 +94,22 @@ var input = struct {
 };
 
 // TODO: we could make getc fn() ?u8
-pub fn consoleintr(getc: *const fn() ?u8) void {
+pub fn consoleintr(getc: *const fn () ?u8) void {
     var doprocdump: bool = false;
 
     cons.lock.acquire();
     while (true) {
         var c = getc() orelse break;
 
-        switch(c) {
+        switch (c) {
             kbd.ctrl('P') => { // Process listing.
                 doprocdump = true;
             },
 
             kbd.ctrl('U') => { // Kill line.
-            while (input.e != input.w and
-                input.buf[(input.e-1) % INPUT_BUF] != '\n') {
+                while (input.e != input.w and
+                    input.buf[(input.e - 1) % INPUT_BUF] != '\n')
+                {
                     input.e -%= 1;
                     consputc(BACKSPACE);
                 }
@@ -264,7 +265,8 @@ pub fn putChar(c: u8) void {
 
 pub fn puts(data: []const u8) void {
     for (data) |c| {
-        putChar(c);}
+        putChar(c);
+    }
 }
 
 pub const writer = Writer(void, error{}, callback){ .context = {} };

@@ -41,7 +41,9 @@ fn kfree(v: usize) void {
     //panic("kfree");
 
     // Fill with junk to catch dangling refs.
-    for (@intToPtr([*]u8, v)[0..mmu.PGSIZE]) |*b| { b.* = 1; }
+    for (@intToPtr([*]u8, v)[0..mmu.PGSIZE]) |*b| {
+        b.* = 1;
+    }
 
     //if(kmem.use_lock)
     //    acquire(&kmem.lock);

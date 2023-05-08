@@ -33,7 +33,7 @@ export fn main() noreturn {
     uart.uartinit();
     trap.tvinit();
     bio.binit();
-//    ide.ideinit();
+    //    ide.ideinit();
     trap.idtinit();
 
     console.initialize();
@@ -42,8 +42,7 @@ export fn main() noreturn {
 
     locktest();
 
-
-    asm volatile("sti");
+    asm volatile ("sti");
 
     if (mp.ncpu == 1) {
         console.puts("npuc: 1");
@@ -62,7 +61,7 @@ fn startothers() void {
     // _binary_entryother_start.
     var args = @intToPtr([*]usize, memlayout.p2v(0x8000));
     @memcpy(@intToPtr([*]u8, memlayout.p2v(0x7000)), @intToPtr([*]u8, @ptrToInt(&entry.entry_others)), 0x800);
-    for (mp.cpus) |*c, i| {
+    for (mp.cpus, 0..) |*c, i| {
         if (i == mp.ncpu) {
             break;
         }
@@ -91,7 +90,6 @@ export var entrypgdir: [mmu.NPDENTRIES]u32 align(mmu.PGSIZE) = init: {
     dir[memlayout.KERNBASE >> mmu.PDXSHIFT] = (0) | mmu.PTE_P | mmu.PTE_W | mmu.PTE_PS;
     break :init dir;
 };
-
 
 fn locktest() void {
     var l = spinlock.spinlock.init("hoge");

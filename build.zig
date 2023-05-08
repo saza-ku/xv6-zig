@@ -19,12 +19,7 @@ pub fn build(b: *Builder) void {
     disabled_features.addFeature(@enumToInt(features.avx2));
     enabled_features.addFeature(@enumToInt(features.soft_float));
 
-    const target = CrossTarget{
-        .cpu_arch = Target.Cpu.Arch.x86,
-        .os_tag = Target.Os.Tag.freestanding,
-        .cpu_features_sub = disabled_features,
-        .cpu_features_add = enabled_features
-    };
+    const target = CrossTarget{ .cpu_arch = Target.Cpu.Arch.x86, .os_tag = Target.Os.Tag.freestanding, .cpu_features_sub = disabled_features, .cpu_features_add = enabled_features };
 
     const mode = b.standardReleaseOptions();
 

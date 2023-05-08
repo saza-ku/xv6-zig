@@ -40,7 +40,7 @@ pub const segdesc = packed struct {
     const Self = @This();
 
     pub fn new(typ: u4, base: u32, lim: u32, dpl: u2) Self {
-        return Self {
+        return Self{
             .lim_15_0 = @intCast(u16, (lim >> 12) & 0xffff),
             .base15_0 = @intCast(u16, base & 0xffff),
             .base_23_16 = @intCast(u8, (base >> 16) & 0xff),
@@ -67,9 +67,9 @@ pub const STA_W: u4 = 0x2; // Writeable (non-executable segments)
 pub const STA_R: u4 = 0x2; // Readable (executable segments)
 
 // System segment type bits
-pub const STS_T32A = 0x9;// Available 32-bit TSS
-pub const STS_IG32 = 0xE;// 32-bit Interrupt Gate
-pub const STS_TG32 = 0xF;// 32-bit Trap Gate
+pub const STS_T32A = 0x9; // Available 32-bit TSS
+pub const STS_IG32 = 0xE; // 32-bit Interrupt Gate
+pub const STS_TG32 = 0xF; // 32-bit Trap Gate
 
 // A virtual address 'la' has a three-part structure as follows:
 //
@@ -145,12 +145,12 @@ pub const gatedesc = packed struct {
     const Self = @This();
 
     pub fn new(isTrap: bool, sel: u16, off: u32, d: u2) Self {
-        return Self {
+        return Self{
             .off_15_0 = @intCast(u16, off & 0xffff),
             .cs = sel,
             .args = 0,
             .rsv1 = 0,
-            .typ = if(isTrap) STS_TG32 else STS_IG32,
+            .typ = if (isTrap) STS_TG32 else STS_IG32,
             .s = 0,
             .dpl = d,
             .p = 1,

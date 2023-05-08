@@ -60,12 +60,10 @@ export fn start() align(16) callconv(.Naked) noreturn {
     while (true) {}
 }
 
-
-
 pub fn entry_others() linksection(".text.others") callconv(.Naked) noreturn {
     asm volatile (
+        \\.code16
         \\  cli
-
         \\  # Zero data segment registers DS, ES, and SS.
         \\  xorw    %%ax,%%ax
         \\  movw    %%ax,%%ds
@@ -75,7 +73,7 @@ pub fn entry_others() linksection(".text.others") callconv(.Naked) noreturn {
         \\  # Switch from real to protected mode.  Use a bootstrap GDT that makes
         \\  # virtual addresses map directly to physical addresses so that the
         \\  # effective memory map doesn't change during the transition.
-        //\\  lgdt    gdtdesc
+        //\\  lgdt    %[gdt]
         \\  movl    %%cr0, %%eax
         \\  orl     %[cr0_pe], %%eax
         \\  movl    %%eax, %%cr0
@@ -83,7 +81,7 @@ pub fn entry_others() linksection(".text.others") callconv(.Naked) noreturn {
         \\  # Complete the transition to 32-bit protected mode by using a long jmp
         \\  # to reload %%cs and %%eip.  The segment descriptors are set up with no
         \\  # translation, so that the mapping is still the identity mapping.
-        \\  ljmpl    %[kcode], $0x7000
+        \\  ljmpl    %[kcode], %[gdt]
         \\
         :
         : [cr0_pe] "i" (mmu.CR0_PE),
@@ -92,15 +90,15 @@ pub fn entry_others() linksection(".text.others") callconv(.Naked) noreturn {
           [cr4_pse] "i" (mmu.CR4_PSE),
           [cr0] "i" (mmu.CR0_PE | mmu.CR0_PG | mmu.CR0_WP),
           [gdt_size] "i" (@sizeOf(@TypeOf(entry_gdt))),
-          //[gdt] "i" (@ptrToInt(&entry_gdt)),
+          [gdt] "i" (@ptrToInt(&entry_gdt)),
     );
 
     unreachable;
 }
 
-const entry_gdt = [3]mmu.segdesc {
+const entry_gdt = [3]mmu.segdesc{
     undefined,
-    mmu.segdesc {
+    mmu.segdesc{
         .lim_15_0 = 0,
         .base15_0 = 0xffff,
         .base_23_16 = 0,
@@ -115,7 +113,7 @@ const entry_gdt = [3]mmu.segdesc {
         .g = 1,
         .base_31_24 = 0,
     },
-    mmu.segdesc {
+    mmu.segdesc{
         .lim_15_0 = 0,
         .base15_0 = 0xffff,
         .base_23_16 = 0,

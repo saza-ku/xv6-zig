@@ -96,7 +96,7 @@ pub fn ideintr() void {
     idequeue = b.qnext;
 
     // Read data if needed
-    if((b.flags & bio.B_DIRTY) == 0 and idewait(true)) {
+    if ((b.flags & bio.B_DIRTY) == 0 and idewait(true)) {
         x86.insl(0x1f0, @ptrToInt(&b.data), fs.BSIZE / 4);
     }
 
@@ -113,13 +113,13 @@ pub fn iderw(b_arg: *bio.buf) void {
     var b = b_arg;
     // TODO: error handling
     if (!b.lock.hoding()) {
-        asm volatile("1: jmp 1b");
+        asm volatile ("1: jmp 1b");
     }
     if ((b.flags & (bio.B_VALID | bio.B_DIRTY)) == bio.B_VALID) {
-        asm volatile("1: jmp 1b");
+        asm volatile ("1: jmp 1b");
     }
     if (b.dev != 0 and !havedisk1) {
-        asm volatile("1: jmp 1b");
+        asm volatile ("1: jmp 1b");
     }
 
     // Append b to idequeue.

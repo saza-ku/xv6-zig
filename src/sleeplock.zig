@@ -13,7 +13,7 @@ pub const sleeplock = struct {
     const Self = @This();
 
     pub fn init(name: []const u8) Self {
-        return Self {
+        return Self{
             .locked = false,
             .lk = spinlock.spinlock.init("sleep lock"),
             .name = name,

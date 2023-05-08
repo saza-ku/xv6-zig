@@ -16,18 +16,18 @@ pub const spinlock = struct {
     const Self = @This();
 
     pub fn init(name: []const u8) Self {
-        return Self {
+        return Self{
             .name = name,
             .locked = 0,
             .cpu = null,
-            .pcs = [10]usize{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+            .pcs = [10]usize{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
         };
     }
 
-// Acquire the lock.
-// Loops (spins) until the lock is acquired.
-// Holding a lock for a long time may cause
-// other CPUs to waste time spinning to acquire it.
+    // Acquire the lock.
+    // Loops (spins) until the lock is acquired.
+    // Holding a lock for a long time may cause
+    // other CPUs to waste time spinning to acquire it.
     pub fn acquire(self: *Self) void {
         pushcli(); // disable interrupts to avoid deadlock
         if (self.hoding()) {
@@ -50,7 +50,7 @@ pub const spinlock = struct {
         self.pcs[0] = 0;
         self.cpu = null;
 
-        asm volatile("movl $0, (%[addr])"
+        asm volatile ("movl $0, (%[addr])"
             :
             : [addr] "r" (&self.locked),
             : "memory"
@@ -74,8 +74,7 @@ pub const spinlock = struct {
     // (It might fail when we handle function pointer.)
     fn getcallerpcs(self: *Self) void {
         var ebp_addr = asm ("mov %%ebp, %%eax"
-        : [ret] "={eax}" (-> usize)
-        :
+            : [ret] "={eax}" (-> usize),
         );
         var i: u32 = 0;
         while (i < 10) : (i += 1) {
