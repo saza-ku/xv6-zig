@@ -139,7 +139,7 @@ fn setupkvm() ?[*]mmu.pde_t {
         },
     };
 
-    for (kmap) |*k| {
+    for (&kmap) |*k| {
         const ok = mappages(pgdir, k.virt, k.phys_end -% k.phys_start, k.phys_start, k.perm);
         count += 1;
         if (ok == false) {

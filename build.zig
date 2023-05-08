@@ -26,30 +26,37 @@ pub fn build(b: *Builder) void {
         .cpu_features_add = enabled_features
     };
 
-    const mode = b.standardReleaseOptions();
+    const optimize = b.standardOptimizeOption(.{});
 
     // objects for assembly
-    const main_obj = b.addObject("main", "src/main.zig");
-    main_obj.setTarget(target);
-    main_obj.setBuildMode(mode);
+    const main_obj = b.addObject(std.Build.ObjectOptions{
+        .name = "main",
+        .root_source_file = .{ .path = "src/main.zig" },
+        .target = target,
+        .optimize = optimize,
+    });
 
-    const kernel = b.addExecutable("kernel.elf", "src/entry.zig");
-    kernel.setTarget(target);
-    kernel.setBuildMode(mode);
+    const kernel = b.addExecutable(.{
+        .name = "kernel.elf",
+        .root_source_file = .{ .path = "src/entry.zig" },
+        .optimize = optimize,
+        .target = target,
+        .linkage = std.build.CompileStep.Linkage.static,
+    });
     kernel.setLinkerScriptPath(.{ .path = "src/kernel.ld" });
     kernel.addAssemblyFile("src/trapasm.S");
     kernel.addAssemblyFile("src/vector.S");
     kernel.addObject(main_obj);
     kernel.code_model = .kernel;
-    kernel.install();
+    b.installArtifact(kernel);
 
     const kernel_step = b.step("kernel", "Build the kernel");
-    kernel_step.dependOn(&kernel.install_step.?.step);
+    kernel_step.dependOn(&kernel.step);
 
-    const iso_dir = b.fmt("{s}/iso_root", .{b.cache_root});
-    const boot_dir = b.fmt("{s}/iso_root/boot", .{b.cache_root});
-    const grub_dir = b.fmt("{s}/iso_root/boot/grub", .{b.cache_root});
-    const kernel_path = b.getInstallPath(kernel.install_step.?.dest_dir, kernel.out_filename);
+    const iso_dir = "./zig-cache/iso_root";
+    const boot_dir = "./zig-cache/iso_root/boot";
+    const grub_dir = "./zig-cache/iso_root/boot/grub";
+    const kernel_path = std.fmt.allocPrint(std.heap.page_allocator, "./zig-out/bin/{s}", .{ kernel.out_filename }) catch unreachable;
     const iso_path = b.fmt("{s}/disk.iso", .{b.exe_dir});
 
     const iso_cmd_str = &[_][]const u8{ "/bin/sh", "-c", std.mem.concat(b.allocator, u8, &[_][]const u8{ "mkdir -p ", grub_dir, " && ", "cp ", kernel_path, " ", boot_dir, " && ", "cp grub.cfg ", grub_dir, " && ", "grub-mkrescue -o ", iso_path, " ", iso_dir }) catch unreachable };

@@ -48,7 +48,7 @@ pub const devsw_t = struct {
 
 pub var devsw: [param.NDEV]devsw_t = init: {
     var initial_value: [param.NDEV]devsw_t = undefined;
-    for (initial_value) |*pt, i| {
+    for (initial_value, 0..) |*pt, i| {
         if (i == CONSOLE) {
             pt.* = devsw_t {
                 .read = console.consoleread,

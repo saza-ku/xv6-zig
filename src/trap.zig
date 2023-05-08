@@ -65,6 +65,9 @@ export fn trap(tf: *x86.trapframe) void {
         T_IRQ0 + IRQ_TIMER => {
             tickslock.acquire();
             ticks += 1;
+            if (ticks == 10) {
+                console.printf("ticks = {}", .{ ticks });
+            }
             proc.wakeup(@ptrToInt(&ticks));
             tickslock.release();
             lapic.lapiceoi();

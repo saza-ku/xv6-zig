@@ -82,7 +82,7 @@ pub fn mycpu() *cpu {
     const apicid = lapic.lapicid();
     // APIC IDs are not guaranteed to be contiguous. Maybe we should have
     // a reverse map, or reserve a register to store &cpus[i].
-    for (mp.cpus) |*c| {
+    for (&mp.cpus) |*c| {
         if (c.apicid == apicid) {
             return c;
         }
@@ -133,7 +133,7 @@ pub fn sleep(chan: usize, lk: *spinlock.spinlock) void {
 // Wake up all processes sleeping on chan.
 // The ptable lock must be held.
 fn wakeup1(chan: usize) void {
-    for (ptable.proc) |*p| {
+    for (&ptable.proc) |*p| {
         if (p.state == procstate.SLEEPING and p.chan == chan) {
             p.*.state = procstate.RUNNABLE;
         }

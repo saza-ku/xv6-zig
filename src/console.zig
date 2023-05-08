@@ -47,7 +47,7 @@ fn cgaputc(c: u32) void {
     }
 
     if (pos / 80 >= 24) { // Scroll up.
-        for (crt[80..24 * 80]) |b, i| {
+        for (crt[80..24 * 80], 0..) |b, i| {
             crt[i] = b;
         }
         pos -= 80;

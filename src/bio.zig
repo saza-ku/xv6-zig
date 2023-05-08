@@ -100,7 +100,7 @@ pub fn binit() void {
     //Create list of buffers
     bcache.head.prev = &bcache.head;
     bcache.head.next = &bcache.head;
-    for (bcache.buf) |*b| {
+    for (&bcache.buf) |*b| {
         b.*.next = bcache.head.next;
         b.*.prev = &bcache.head;
         b.*.lock = sleeplock.sleeplock.init("buffer");

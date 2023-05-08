@@ -45,7 +45,7 @@ const dinode = struct {
 };
 
 // Inodes per block.
-pub const IPB = (BSIZSE / @sizeOf(dinode));
+pub const IPB = (BSIZE / @sizeOf(dinode));
 
 // Bitmap bites per block
 pub const BPB = BSIZE * 8;
@@ -59,20 +59,20 @@ pub const dirent = struct {
 };
 
 // Block containing inode i
-pub fn iblock(i: u32, sb: superblock) void {
-    return i / IPB + sb.inodestart;
+pub fn iblock(i: u32, s: superblock) void {
+    return i / IPB + s.inodestart;
 }
 
 // Block of free map containing bit for block b
-pub fn bblock(b: u32, sb: *superblock) u32 {
-    return b / BPB + sb.bmapstart;
+pub fn bblock(b: u32, s: *superblock) u32 {
+    return b / BPB + s.bmapstart;
 }
 
 // Read the super block.
-pub fn readsb(dev: u32, sb: *superblock) void {
+pub fn readsb(dev: u32, s: *superblock) void {
     var bp = bio.buf.read(dev, 1);
     defer bp.release();
-    util.memmov(@ptrCast([*]u8, &sb), @ptrCast([*]u8, &bp.data), @sizeOf(superblock));
+    util.memmov(@ptrCast([*]u8, &s), @ptrCast([*]u8, &bp.data), @sizeOf(superblock));
 }
 
 // Zero a block.
@@ -90,7 +90,7 @@ fn balloc(dev: u32) u32 {
     var bp: *bio.buf = undefined;
     var b: u32 = 0;
     while (b < sb.size) : (b += BPB) {
-        var bp = bio.buf.read(dev, bblock(b, sb));
+        bp = bio.buf.read(dev, bblock(b, sb));
         var bi: u32 = 0;
         while (bi < BPB and b + bi < sb.size) : (bi += 1) {
             const m: u32 = 1 << (bi % 8);
@@ -194,7 +194,7 @@ var icache = struct {
 } {
     .lock = spinlock.spinlock.init("icache"),
     .inode = init: {
-        var initial_value: [param.INODE]file.inode = undeinfed;
+        var initial_value: [param.INODE]file.inode = undefined;
         for (initial_value) |*i| {
             i.lock = sleeplock.sleeplock.init("inode");
         }
@@ -205,14 +205,14 @@ var icache = struct {
 // Allocate an inode on device dev.
 // Mark it as allocated by  giving it type type.
 // Returns an unlocked but allocated and referenced inode.
-fn ialloc(dev: u32, type: u16) *file.inode {
+fn ialloc(dev: u32, typ: u16) *file.inode {
     var inum: u32 = 1;
     while (inum < sb.ninodes) : (inum += 1) {
         var bp = bio.buf.read(dev, iblock(inum, sb));
         var dip = @ptrCast([*]dinode, &bp.data)[inum % IPB];
         if (dip.typ == 0) { // a free inode
             @memset(@ptrCast([*]u8, &dip), 0, @sizeOf(dinode));
-            dip.typ = type;
+            dip.typ = typ;
             // TODO: log_write()
             bp.release();
             // TODO: return iget

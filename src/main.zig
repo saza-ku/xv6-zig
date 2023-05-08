@@ -38,7 +38,6 @@ export fn main() noreturn {
     console.initialize();
 
     locktest();
-    console.printf("hoge: {}", .{ 3 });
 
     asm volatile("sti");
     while (true) {}
