@@ -16,20 +16,20 @@ var panicked: bool = false;
 pub var cons = struct {
     lock: spinlock.spinlock,
     locking: bool,
-} {
+}{
     .lock = spinlock.spinlock.init("console"),
     .locking = false,
 };
 
 const BACKSPACE = std.ascii.control_code.bs;
 const CRTPORT = 0x3d4;
-var crt = @intToPtr([*]u16, memlayout.p2v(0xb8000)); // CGA memory
+var crt = @as([*]u16, @ptrFromInt(memlayout.p2v(0xb8000))); // CGA memory
 
 fn cgaputc(c: u32) void {
     x86.out(CRTPORT, @as(u8, 14));
-    var pos = @intCast(u16, x86.in(u8, CRTPORT + 1)) << 8;
+    var pos = @as(u16, @intCast(x86.in(u8, CRTPORT + 1))) << 8;
     x86.out(CRTPORT, @as(u8, 15));
-    pos |= @intCast(u16, x86.in(u8, CRTPORT + 1));
+    pos |= @as(u16, @intCast(x86.in(u8, CRTPORT + 1)));
 
     if (c == '\n') {
         pos += 80 - pos % 80;
@@ -38,7 +38,7 @@ fn cgaputc(c: u32) void {
             pos -= 1;
         }
     } else {
-        crt[pos] = (@intCast(u16, c & 0xff)) | 0x0700; // black on white
+        crt[pos] = (@as(u16, @intCast(c & 0xff))) | 0x0700; // black on white
         pos += 1;
     }
 
@@ -47,26 +47,26 @@ fn cgaputc(c: u32) void {
     }
 
     if (pos / 80 >= 24) { // Scroll up.
-        for (crt[80..24 * 80], 0..) |b, i| {
+        for (crt[80 .. 24 * 80], 0..) |b, i| {
             crt[i] = b;
         }
         pos -= 80;
-        for (crt[pos..pos + 24 * 80 - pos]) |*b| {
+        for (crt[pos .. pos + 24 * 80 - pos]) |*b| {
             b.* = 0;
         }
     }
 
     x86.out(CRTPORT, @as(u8, 14));
-    x86.out(CRTPORT+1,@intCast(u8, pos >> 8));
+    x86.out(CRTPORT + 1, @as(u8, @intCast(pos >> 8)));
     x86.out(CRTPORT, @as(u8, 15));
-    x86.out(CRTPORT+1,@intCast(u8, pos & 0xff));
+    x86.out(CRTPORT + 1, @as(u8, @intCast(pos & 0xff)));
     crt[pos] = ' ' | 0x0700;
 }
 
 fn consputc(c: u8) void {
     if (panicked) {
         x86.cli();
-        while(true) {}
+        while (true) {}
     }
 
     if (c == BACKSPACE) {
@@ -74,7 +74,7 @@ fn consputc(c: u8) void {
         uart.putc(' ');
         uart.putc(BACKSPACE);
     } else {
-        uart.putc(@intCast(u8, c & 0xff));
+        uart.putc(@as(u8, @intCast(c & 0xff)));
     }
     cgaputc(c);
 }
@@ -85,7 +85,7 @@ var input = struct {
     r: usize, // Read index
     w: usize, // Write index
     e: usize, // Edit index
-} {
+}{
     .buf = undefined,
     .r = 0,
     .w = 0,
@@ -93,21 +93,22 @@ var input = struct {
 };
 
 // TODO: we could make getc fn() ?u8
-pub fn consoleintr(getc: *const fn() ?u8) void {
+pub fn consoleintr(getc: *const fn () ?u8) void {
     var doprocdump: bool = false;
 
     cons.lock.acquire();
     while (true) {
         var c = getc() orelse break;
 
-        switch(c) {
+        switch (c) {
             kbd.ctrl('P') => { // Process listing.
                 doprocdump = true;
             },
 
             kbd.ctrl('U') => { // Kill line.
-            while (input.e != input.w and
-                input.buf[(input.e-1) % INPUT_BUF] != '\n') {
+                while (input.e != input.w and
+                    input.buf[(input.e - 1) % INPUT_BUF] != '\n')
+                {
                     input.e -%= 1;
                     consputc(BACKSPACE);
                 }
@@ -128,7 +129,7 @@ pub fn consoleintr(getc: *const fn() ?u8) void {
                     consputc(c);
                     if (c == '\n' or c == kbd.ctrl('D') or input.e == input.r +% INPUT_BUF) {
                         input.w = input.e;
-                        proc.wakeup(@ptrToInt(&input.r));
+                        proc.wakeup(@intFromPtr(&input.r));
                     }
                 }
             },
@@ -154,7 +155,7 @@ pub fn consoleread(ip: *file.inode, dst: [*]u8, n: u32) ?u32 {
             if (proc.myproc().killed) {
                 return null;
             }
-            proc.sleep(@ptrToInt(&input.r), &cons.lock);
+            proc.sleep(@intFromPtr(&input.r), &cons.lock);
         }
         input.r = (input.r + 1) % INPUT_BUF;
         const c = input.buf[input.r];
@@ -221,10 +222,10 @@ pub const ConsoleColors = enum(u8) {
 var row: usize = 0;
 var column: usize = 0;
 var color = vgaEntryColor(ConsoleColors.LightGray, ConsoleColors.Black);
-var buffer = @intToPtr([*]u16, memlayout.p2v(0xB8000));
+var buffer = @as([*]u16, @ptrFromInt(memlayout.p2v(0xB8000)));
 
 fn vgaEntryColor(fg: ConsoleColors, bg: ConsoleColors) u8 {
-    return @enumToInt(fg) | (@enumToInt(bg) << 4);
+    return @intFromEnum(fg) | (@intFromEnum(bg) << 4);
 }
 
 fn vgaEntry(uc: u8, new_color: u8) u16 {
@@ -242,7 +243,7 @@ pub fn setColor(new_color: u8) void {
 }
 
 pub fn clear() void {
-    mem.set(u16, buffer[0..VGA_SIZE], vgaEntry(' ', color));
+    @memset(buffer[0..VGA_SIZE], vgaEntry(' ', color));
 }
 
 pub fn putCharAt(c: u8, new_color: u8, x: usize, y: usize) void {
@@ -263,7 +264,8 @@ pub fn putChar(c: u8) void {
 
 pub fn puts(data: []const u8) void {
     for (data) |c| {
-        putChar(c);}
+        putChar(c);
+    }
 }
 
 pub const writer = Writer(void, error{}, callback){ .context = {} };

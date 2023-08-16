@@ -57,5 +57,6 @@ export fn start() align(16) callconv(.Naked) noreturn {
         :
         : [kstacksize] "{ecx}" (param.KSTACKSIZE),
     );
+
     while (true) {}
 }

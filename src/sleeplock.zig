@@ -13,7 +13,7 @@ pub const sleeplock = struct {
     const Self = @This();
 
     pub fn init(name: []const u8) Self {
-        return Self {
+        return Self{
             .locked = false,
             .lk = spinlock.spinlock.init("sleep lock"),
             .name = name,
@@ -36,7 +36,7 @@ pub const sleeplock = struct {
         defer self.lk.release();
         self.locked = false;
         self.pid = 0;
-        proc.wakeup(@ptrToInt(self));
+        proc.wakeup(@intFromPtr(self));
     }
 
     pub fn holding(self: *Self) bool {

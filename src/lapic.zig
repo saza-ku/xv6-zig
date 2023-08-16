@@ -74,7 +74,7 @@ pub fn lapicinit() void {
     // Send an Init Level De-Assert to synchronise arbitration ID's.
     lapicw(ICRHI, 0);
     lapicw(ICRLO, BCAST | INIT | LEVEL);
-    while(lapic[ICRLO] & DELIVS != 0) {}
+    while (lapic[ICRLO] & DELIVS != 0) {}
 
     // Enable interrupts on the APIC (but not on the processor).
     lapicw(TPR, 0);

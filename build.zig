@@ -12,19 +12,14 @@ pub fn build(b: *Builder) void {
     var disabled_features = Feature.Set.empty;
     var enabled_features = Feature.Set.empty;
 
-    disabled_features.addFeature(@enumToInt(features.mmx));
-    disabled_features.addFeature(@enumToInt(features.sse));
-    disabled_features.addFeature(@enumToInt(features.sse2));
-    disabled_features.addFeature(@enumToInt(features.avx));
-    disabled_features.addFeature(@enumToInt(features.avx2));
-    enabled_features.addFeature(@enumToInt(features.soft_float));
+    disabled_features.addFeature(@intFromEnum(features.mmx));
+    disabled_features.addFeature(@intFromEnum(features.sse));
+    disabled_features.addFeature(@intFromEnum(features.sse2));
+    disabled_features.addFeature(@intFromEnum(features.avx));
+    disabled_features.addFeature(@intFromEnum(features.avx2));
+    enabled_features.addFeature(@intFromEnum(features.soft_float));
 
-    const target = CrossTarget{
-        .cpu_arch = Target.Cpu.Arch.x86,
-        .os_tag = Target.Os.Tag.freestanding,
-        .cpu_features_sub = disabled_features,
-        .cpu_features_add = enabled_features
-    };
+    const target = CrossTarget{ .cpu_arch = Target.Cpu.Arch.x86, .os_tag = Target.Os.Tag.freestanding, .cpu_features_sub = disabled_features, .cpu_features_add = enabled_features };
 
     const optimize = b.standardOptimizeOption(.{});
 
@@ -44,8 +39,8 @@ pub fn build(b: *Builder) void {
         .linkage = std.build.CompileStep.Linkage.static,
     });
     kernel.setLinkerScriptPath(.{ .path = "src/kernel.ld" });
-    kernel.addAssemblyFile("src/trapasm.S");
-    kernel.addAssemblyFile("src/vector.S");
+    kernel.addAssemblyFile(.{ .path = "src/trapasm.S" });
+    kernel.addAssemblyFile(.{ .path = "src/vector.S" });
     kernel.addObject(main_obj);
     kernel.code_model = .kernel;
     b.installArtifact(kernel);
@@ -56,7 +51,7 @@ pub fn build(b: *Builder) void {
     const iso_dir = "./zig-cache/iso_root";
     const boot_dir = "./zig-cache/iso_root/boot";
     const grub_dir = "./zig-cache/iso_root/boot/grub";
-    const kernel_path = std.fmt.allocPrint(std.heap.page_allocator, "./zig-out/bin/{s}", .{ kernel.out_filename }) catch unreachable;
+    const kernel_path = std.fmt.allocPrint(std.heap.page_allocator, "./zig-out/bin/{s}", .{kernel.out_filename}) catch unreachable;
     const iso_path = b.fmt("{s}/disk.iso", .{b.exe_dir});
 
     const iso_cmd_str = &[_][]const u8{ "/bin/sh", "-c", std.mem.concat(b.allocator, u8, &[_][]const u8{ "mkdir -p ", grub_dir, " && ", "cp ", kernel_path, " ", boot_dir, " && ", "cp grub.cfg ", grub_dir, " && ", "grub-mkrescue -o ", iso_path, " ", iso_dir }) catch unreachable };

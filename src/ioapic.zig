@@ -41,7 +41,7 @@ const ioapic_t = packed struct {
 };
 
 pub fn ioapicinit() void {
-    ioapic = @intToPtr(*ioapic_t, IOAPIC);
+    ioapic = @as(*ioapic_t, @ptrFromInt(IOAPIC));
     const maxintr = (ioapic.read(REG_VER) >> 16) & 0xff;
     const id = ioapic.read(REG_ID) >> 24;
     if (id != mp.ioapicid) {
@@ -62,5 +62,5 @@ pub fn ioapicenable(irq: u32, cpunum: u8) void {
     // enabled, and routed to the given cpunum,
     // which happens to be that cpu's APIC ID.
     ioapic.write(REG_TABLE + 2 * irq, trap.T_IRQ0 + irq);
-    ioapic.write(REG_TABLE + 2 * irq + 1, @intCast(u32, cpunum) << 24);
+    ioapic.write(REG_TABLE + 2 * irq + 1, @as(u32, @intCast(cpunum)) << 24);
 }

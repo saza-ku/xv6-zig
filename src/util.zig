@@ -1,8 +1,8 @@
 pub fn memmov(dst: [*]u8, src: [*]const u8, n: usize) void {
     var s = src;
     var d = dst;
-    const sAddr = @ptrToInt(s);
-    const dAddr = @ptrToInt(d);
+    const sAddr = @intFromPtr(s);
+    const dAddr = @intFromPtr(d);
     if (sAddr < dAddr and sAddr + n > dAddr) {
         while (n > 0) : (n -= 1) {
             d[n] = s[n];
