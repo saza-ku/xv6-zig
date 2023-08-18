@@ -24,21 +24,19 @@ pub fn build(b: *Builder) void {
     const optimize = b.standardOptimizeOption(.{});
 
     // objects for assembly
-    const main_obj = b.addObject(std.Build.ObjectOptions{
+    const main_obj = b.addStaticLibrary(std.Build.ObjectOptions{
         .name = "main",
         .root_source_file = .{ .path = "src/main.zig" },
         .target = target,
         .optimize = optimize,
     });
 
-    const kernel = b.addExecutable(.{
-        .name = "kernel.elf",
+    const kernel = b.addStaticLibrary(std.Build..{
+        .name = "entry",
         .root_source_file = .{ .path = "src/entry.zig" },
         .optimize = optimize,
         .target = target,
-        .linkage = std.build.CompileStep.Linkage.static,
     });
-    kernel.setLinkerScriptPath(.{ .path = "src/kernel.ld" });
     kernel.addAssemblyFile(.{ .path = "src/trapasm.S" });
     kernel.addAssemblyFile(.{ .path = "src/vector.S" });
     kernel.addObject(main_obj);
