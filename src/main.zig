@@ -17,7 +17,7 @@ const vm = @import("vm.zig");
 extern const end: u8;
 
 export fn main() noreturn {
-    const end_addr = @ptrToInt(&end);
+    const end_addr = @intFromPtr(&end);
     kalloc.kinit1(end_addr, memlayout.p2v(4 * 1024 * 1024));
 
     vm.kvmalloc() orelse asm volatile ("1: jmp 1b");
@@ -39,7 +39,7 @@ export fn main() noreturn {
 
     locktest();
 
-    asm volatile("sti");
+    asm volatile ("sti");
     while (true) {}
 }
 
@@ -55,7 +55,6 @@ export var entrypgdir: [mmu.NPDENTRIES]u32 align(mmu.PGSIZE) = init: {
     dir[memlayout.KERNBASE >> mmu.PDXSHIFT] = (0) | mmu.PTE_P | mmu.PTE_W | mmu.PTE_PS;
     break :init dir;
 };
-
 
 fn locktest() void {
     var l = spinlock.spinlock.init("hoge");

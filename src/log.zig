@@ -20,5 +20,3 @@
 //   block C
 //   ...
 // Log appends are synchronous.
-
-

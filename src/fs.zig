@@ -41,7 +41,7 @@ const dinode = struct {
     minor: u16, // Minor device number (T_DEV only)
     nlink: u16, // Number of links to inode in file system
     size: u32, // Size of file (bytes)
-    addrs: [NDIRECT+1]u32,
+    addrs: [NDIRECT + 1]u32,
 };
 
 // Inodes per block.
@@ -72,14 +72,14 @@ pub fn bblock(b: u32, s: *superblock) u32 {
 pub fn readsb(dev: u32, s: *superblock) void {
     var bp = bio.buf.read(dev, 1);
     defer bp.release();
-    util.memmov(@ptrCast([*]u8, &s), @ptrCast([*]u8, &bp.data), @sizeOf(superblock));
+    util.memmov(@as([*]u8, @ptrCast(&s)), @as([*]u8, @ptrCast(&bp.data)), @sizeOf(superblock));
 }
 
 // Zero a block.
 fn bzero(dev: u32, bno: u32) void {
     var bp = bio.buf.read(dev, bno);
     defer bp.release();
-    @memset(@ptrCast([*]u8, &bp.data), 0, BSIZE);
+    @memset(@as([*]u8, @ptrCast(&bp.data))[0..BSIZE], 0);
     // TODO: log_write();
 }
 
@@ -104,7 +104,7 @@ fn balloc(dev: u32) u32 {
         }
         bp.release();
     }
-    asm volatile("1: jmp 1b");// TODO: error handling
+    asm volatile ("1: jmp 1b"); // TODO: error handling
 }
 
 fn brree(dev: u32, b: u32) void {
@@ -191,7 +191,7 @@ fn brree(dev: u32, b: u32) void {
 var icache = struct {
     lock: spinlock.spinlocks,
     inode: [param.INODE]file.inode,
-} {
+}{
     .lock = spinlock.spinlock.init("icache"),
     .inode = init: {
         var initial_value: [param.INODE]file.inode = undefined;
@@ -209,9 +209,9 @@ fn ialloc(dev: u32, typ: u16) *file.inode {
     var inum: u32 = 1;
     while (inum < sb.ninodes) : (inum += 1) {
         var bp = bio.buf.read(dev, iblock(inum, sb));
-        var dip = @ptrCast([*]dinode, &bp.data)[inum % IPB];
+        var dip = @as([*]dinode, @ptrCast(&bp.data))[inum % IPB];
         if (dip.typ == 0) { // a free inode
-            @memset(@ptrCast([*]u8, &dip), 0, @sizeOf(dinode));
+            @memset(@as([*]u8, @ptrCast(&dip))[0..@sizeOf(dinode)], 0);
             dip.typ = typ;
             // TODO: log_write()
             bp.release();

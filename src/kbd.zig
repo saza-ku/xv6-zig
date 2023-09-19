@@ -9,21 +9,21 @@ const ht = ctrl_code.ht; // '\t'
 
 // PC keyboard interface constants
 
-const KBSTATP = 0x64;    // kbd controller status port(I)
-const KBS_DIB = 0x01;    // kbd data in buffer
-const KBDATAP = 0x60;    // kbd data port(I)
+const KBSTATP = 0x64; // kbd controller status port(I)
+const KBS_DIB = 0x01; // kbd data in buffer
+const KBDATAP = 0x60; // kbd data port(I)
 
 const NO = 0;
 
-const SHIFT: u8 = (1<<0);
-const CTL: u8 = (1<<1);
-const ALT: u8 = (1<<2);
+const SHIFT: u8 = (1 << 0);
+const CTL: u8 = (1 << 1);
+const ALT: u8 = (1 << 2);
 
-const CAPSLOCK: u8 = (1<<3);
-const NUMLOCK: u8 = (1<<4);
-const SCROLLLOCK: u8 = (1<<5);
+const CAPSLOCK: u8 = (1 << 3);
+const NUMLOCK: u8 = (1 << 4);
+const SCROLLLOCK: u8 = (1 << 5);
 
-const E0ESC: u8 = (1<<6);
+const E0ESC: u8 = (1 << 6);
 
 // Special keycodes
 const KEY_HOME = 0xE0;
@@ -38,7 +38,7 @@ const KEY_INS = 0xE8;
 const KEY_DEL = 0xE9;
 
 const shiftcode: [256]u8 = init: {
-    var initial_value = [1]u8 { NO } ** 256;
+    var initial_value = [1]u8{NO} ** 256;
     initial_value[0x1D] = CTL;
     initial_value[0x2A] = SHIFT;
     initial_value[0x36] = SHIFT;
@@ -49,7 +49,7 @@ const shiftcode: [256]u8 = init: {
 };
 
 const togglecode: [256]u8 = init: {
-    var initial_value = [1]u8 { NO } ** 256;
+    var initial_value = [1]u8{NO} ** 256;
     initial_value[0x3A] = CAPSLOCK;
     initial_value[0x45] = NUMLOCK;
     initial_value[0x46] = SCROLLLOCK;
@@ -57,21 +57,21 @@ const togglecode: [256]u8 = init: {
 };
 
 const normalmap: [256]u8 = init: {
-    var initial_value = [0x58]u8 {
-        NO,   0x1B, '1',  '2',  '3',  '4',  '5',  '6',  // 0x00
-        '7',  '8',  '9',  '0',  '-',  '=',  bs,   ht,
-        'q',  'w',  'e',  'r',  't',  'y',  'u',  'i',  // 0x10
-        'o',  'p',  '[',  ']',  '\n', NO,   'a',  's',
-        'd',  'f',  'g',  'h',  'j',  'k',  'l',  ';',  // 0x20
-        '\'', '`',  NO,   '\\', 'z',  'x',  'c',  'v',
-        'b',  'n',  'm',  ',',  '.',  '/',  NO,   '*',  // 0x30
-        NO,   ' ',  NO,   NO,   NO,   NO,   NO,   NO,
-        NO,   NO,   NO,   NO,   NO,   NO,   NO,   '7',  // 0x40
-        '8',  '9',  '-',  '4',  '5',  '6',  '+',  '1',
-        '2',  '3',  '0',  '.',  NO,   NO,   NO,   NO,   // 0x50
-    } ++ ([1]u8 { NO } ** (256 - 0x58));
-    initial_value[0x9C] = '\n';// KP_Enter
-    initial_value[0xB5] = '/';// KP_Div
+    var initial_value = [0x58]u8{
+        NO,  0x1B, '1', '2', '3', '4', '5', '6', // 0x00
+        '7', '8',  '9', '0', '-', '=', bs,  ht,
+        'q', 'w', 'e', 'r', 't',  'y', 'u', 'i', // 0x10
+        'o', 'p', '[', ']', '\n', NO,  'a', 's',
+        'd',  'f', 'g', 'h',  'j', 'k', 'l', ';', // 0x20
+        '\'', '`', NO,  '\\', 'z', 'x', 'c', 'v',
+        'b', 'n', 'm', ',', '.', '/', NO, '*', // 0x30
+        NO,  ' ', NO,  NO,  NO,  NO,  NO, NO,
+        NO,  NO,  NO,  NO,  NO,  NO,  NO,  '7', // 0x40
+        '8', '9', '-', '4', '5', '6', '+', '1',
+        '2', '3', '0', '.', NO, NO, NO, NO, // 0x50
+    } ++ ([1]u8{NO} ** (256 - 0x58));
+    initial_value[0x9C] = '\n'; // KP_Enter
+    initial_value[0xB5] = '/'; // KP_Div
     initial_value[0xC8] = KEY_UP;
     initial_value[0xD0] = KEY_DN;
     initial_value[0xC9] = KEY_PGUP;
@@ -86,21 +86,21 @@ const normalmap: [256]u8 = init: {
 };
 
 const shiftmap: [256]u8 = init: {
-    var initial_value = [0x58]u8 {
-        NO,   0o33, '!',  '@',  '#',  '$',  '%',  '^',  // 0x00
-        '&',  '*',  '(',  ')',  '_',  '+',  bs,   ht,
-        'Q',  'W',  'E',  'R',  'T',  'Y',  'U',  'I',  // 0x10
-        'O',  'P',  '{',  '}',  '\n', NO,   'A',  'S',
-        'D',  'F',  'G',  'H',  'J',  'K',  'L',  ':',  // 0x20
-        '"',  '~',  NO,   '|',  'Z',  'X',  'C',  'V',
-        'B',  'N',  'M',  '<',  '>',  '?',  NO,   '*',  // 0x30
-        NO,   ' ',  NO,   NO,   NO,   NO,   NO,   NO,
-        NO,   NO,   NO,   NO,   NO,   NO,   NO,   '7',  // 0x40
-        '8',  '9',  '-',  '4',  '5',  '6',  '+',  '1',
-        '2',  '3',  '0',  '.',  NO,   NO,   NO,   NO,   // 0x50
-    } ++ ([1]u8 { NO } ** (256 - 0x58));
-    initial_value[0x9C] = '\n';// KP_Enter
-    initial_value[0xB5] = '/';// KP_Div
+    var initial_value = [0x58]u8{
+        NO,  0o33, '!', '@', '#', '$', '%', '^', // 0x00
+        '&', '*',  '(', ')', '_', '+', bs,  ht,
+        'Q', 'W', 'E', 'R', 'T',  'Y', 'U', 'I', // 0x10
+        'O', 'P', '{', '}', '\n', NO,  'A', 'S',
+        'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', // 0x20
+        '"', '~', NO,  '|', 'Z', 'X', 'C', 'V',
+        'B', 'N', 'M', '<', '>', '?', NO, '*', // 0x30
+        NO,  ' ', NO,  NO,  NO,  NO,  NO, NO,
+        NO,  NO,  NO,  NO,  NO,  NO,  NO,  '7', // 0x40
+        '8', '9', '-', '4', '5', '6', '+', '1',
+        '2', '3', '0', '.', NO, NO, NO, NO, // 0x50
+    } ++ ([1]u8{NO} ** (256 - 0x58));
+    initial_value[0x9C] = '\n'; // KP_Enter
+    initial_value[0xB5] = '/'; // KP_Div
     initial_value[0xC8] = KEY_UP;
     initial_value[0xD0] = KEY_DN;
     initial_value[0xC9] = KEY_PGUP;
@@ -115,17 +115,17 @@ const shiftmap: [256]u8 = init: {
 };
 
 const ctlmap: [256]u8 = init: {
-    var initial_value = [0x38]u8 {
-        NO,      NO,      NO,      NO,      NO,      NO,      NO,      NO,
-        NO,      NO,      NO,      NO,      NO,      NO,      NO,      NO,
-        ctrl('Q'),  ctrl('W'),  ctrl('E'),  ctrl('R'),  ctrl('T'),  ctrl('Y'),  ctrl('U'),  ctrl('I'),
-        ctrl('O'),  ctrl('P'),  NO,         NO,         '\r',       NO,         ctrl('A'),  ctrl('S'),
-        ctrl('D'),  ctrl('F'),  ctrl('G'),  ctrl('H'),  ctrl('J'),  ctrl('K'),  ctrl('L'),  NO,
-        NO,         NO,         NO,         ctrl('\\'), ctrl('Z'),  ctrl('X'),  ctrl('C'),  ctrl('V'),
-        ctrl('B'),  ctrl('N'),  ctrl('M'),  NO,         NO,         ctrl('/'),  NO,         NO,
-    } ++ ([1]u8 { NO } ** (256 - 0x38));
-    initial_value[0x9C] = '\r';// KP_Enter
-    initial_value[0xB5] = ctrl('/');// KP_Div
+    var initial_value = [0x38]u8{
+        NO,        NO,        NO,        NO,         NO,        NO,        NO,        NO,
+        NO,        NO,        NO,        NO,         NO,        NO,        NO,        NO,
+        ctrl('Q'), ctrl('W'), ctrl('E'), ctrl('R'),  ctrl('T'), ctrl('Y'), ctrl('U'), ctrl('I'),
+        ctrl('O'), ctrl('P'), NO,        NO,         '\r',      NO,        ctrl('A'), ctrl('S'),
+        ctrl('D'), ctrl('F'), ctrl('G'), ctrl('H'),  ctrl('J'), ctrl('K'), ctrl('L'), NO,
+        NO,        NO,        NO,        ctrl('\\'), ctrl('Z'), ctrl('X'), ctrl('C'), ctrl('V'),
+        ctrl('B'), ctrl('N'), ctrl('M'), NO,         NO,        ctrl('/'), NO,        NO,
+    } ++ ([1]u8{NO} ** (256 - 0x38));
+    initial_value[0x9C] = '\r'; // KP_Enter
+    initial_value[0xB5] = ctrl('/'); // KP_Div
     initial_value[0xC8] = KEY_UP;
     initial_value[0xD0] = KEY_DN;
     initial_value[0xC9] = KEY_PGUP;
@@ -139,7 +139,7 @@ const ctlmap: [256]u8 = init: {
     break :init initial_value;
 };
 
-const charcode = [4][256]u8 {
+const charcode = [4][256]u8{
     normalmap, shiftmap, ctlmap, ctlmap,
 };
 

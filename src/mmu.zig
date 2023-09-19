@@ -40,20 +40,20 @@ pub const segdesc = packed struct {
     const Self = @This();
 
     pub fn new(typ: u4, base: u32, lim: u32, dpl: u2) Self {
-        return Self {
-            .lim_15_0 = @intCast(u16, (lim >> 12) & 0xffff),
-            .base15_0 = @intCast(u16, base & 0xffff),
-            .base_23_16 = @intCast(u8, (base >> 16) & 0xff),
+        return Self{
+            .lim_15_0 = @as(u16, @intCast((lim >> 12) & 0xffff)),
+            .base15_0 = @as(u16, @intCast(base & 0xffff)),
+            .base_23_16 = @as(u8, @intCast((base >> 16) & 0xff)),
             .typ = typ,
             .s = 1,
             .dpl = dpl,
             .p = 1,
-            .lim_19_16 = @intCast(u4, (lim >> 28)),
+            .lim_19_16 = @as(u4, @intCast((lim >> 28))),
             .avl = 0,
             .rsv1 = 0,
             .db = 1,
             .g = 1,
-            .base_31_24 = @intCast(u8, base >> 24),
+            .base_31_24 = @as(u8, @intCast(base >> 24)),
         };
     }
 };
@@ -67,9 +67,9 @@ pub const STA_W: u4 = 0x2; // Writeable (non-executable segments)
 pub const STA_R: u4 = 0x2; // Readable (executable segments)
 
 // System segment type bits
-pub const STS_T32A = 0x9;// Available 32-bit TSS
-pub const STS_IG32 = 0xE;// 32-bit Interrupt Gate
-pub const STS_TG32 = 0xF;// 32-bit Trap Gate
+pub const STS_T32A = 0x9; // Available 32-bit TSS
+pub const STS_IG32 = 0xE; // 32-bit Interrupt Gate
+pub const STS_TG32 = 0xF; // 32-bit Trap Gate
 
 // A virtual address 'la' has a three-part structure as follows:
 //
@@ -145,16 +145,16 @@ pub const gatedesc = packed struct {
     const Self = @This();
 
     pub fn new(isTrap: bool, sel: u16, off: u32, d: u2) Self {
-        return Self {
-            .off_15_0 = @intCast(u16, off & 0xffff),
+        return Self{
+            .off_15_0 = @as(u16, @intCast(off & 0xffff)),
             .cs = sel,
             .args = 0,
             .rsv1 = 0,
-            .typ = if(isTrap) STS_TG32 else STS_IG32,
+            .typ = if (isTrap) STS_TG32 else STS_IG32,
             .s = 0,
             .dpl = d,
             .p = 1,
-            .off_31_16 = @intCast(u16, off >> 16),
+            .off_31_16 = @as(u16, @intCast(off >> 16)),
         };
     }
 };

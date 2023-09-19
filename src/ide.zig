@@ -82,7 +82,7 @@ fn idestart(b: *bio.buf) void {
     x86.out(0x1f6, @as(u8, 0xe0) | @as(u8, (b.dev & 1) << 4) | @as(u8, (sector >> 24) & 0x0f));
     if (b.flags & bio.B_DIRTY != 0) {
         x86.out(0x1f7, writecmd);
-        x86.outsl(0x1f0, @ptrToInt(&b.data), fs.BSIZE / 4);
+        x86.outsl(0x1f0, @intFromPtr(&b.data), fs.BSIZE / 4);
     } else {
         x86.out(0x1f7, readcmd);
     }
@@ -96,13 +96,13 @@ pub fn ideintr() void {
     idequeue = b.qnext;
 
     // Read data if needed
-    if((b.flags & bio.B_DIRTY) == 0 and idewait(true)) {
-        x86.insl(0x1f0, @ptrToInt(&b.data), fs.BSIZE / 4);
+    if ((b.flags & bio.B_DIRTY) == 0 and idewait(true)) {
+        x86.insl(0x1f0, @intFromPtr(&b.data), fs.BSIZE / 4);
     }
 
     b.*.flags |= bio.B_VALID;
     b.*.flags &= ~bio.B_DIRTY;
-    proc.wakeup(@ptrToInt(b));
+    proc.wakeup(@intFromPtr(b));
 
     if (idequeue != null) {
         idestart(idequeue);
@@ -113,13 +113,13 @@ pub fn iderw(b_arg: *bio.buf) void {
     var b = b_arg;
     // TODO: error handling
     if (!b.lock.hoding()) {
-        asm volatile("1: jmp 1b");
+        asm volatile ("1: jmp 1b");
     }
     if ((b.flags & (bio.B_VALID | bio.B_DIRTY)) == bio.B_VALID) {
-        asm volatile("1: jmp 1b");
+        asm volatile ("1: jmp 1b");
     }
     if (b.dev != 0 and !havedisk1) {
-        asm volatile("1: jmp 1b");
+        asm volatile ("1: jmp 1b");
     }
 
     // Append b to idequeue.
@@ -136,6 +136,6 @@ pub fn iderw(b_arg: *bio.buf) void {
     }
 
     while ((b.flags & (bio.B_VALID | bio.B_DIRTY)) != bio.B_VALID) {
-        proc.sleep(@ptrToInt(b), &idelock);
+        proc.sleep(@intFromPtr(b), &idelock);
     }
 }

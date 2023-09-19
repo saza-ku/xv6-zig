@@ -43,7 +43,7 @@ var tickslock = spinlock.spinlock.init("time");
 pub var ticks: u32 = 0;
 
 pub fn tvinit() void {
-    const v = @ptrCast([*]u32, &vectors);
+    const v = @as([*]u32, @ptrCast(&vectors));
 
     var i: u32 = 0;
     while (i < 256) : (i += 1) {
@@ -53,7 +53,7 @@ pub fn tvinit() void {
 }
 
 pub fn idtinit() void {
-    x86.lidt(@ptrToInt(&idt), @intCast(u16, @sizeOf(@TypeOf(idt))));
+    x86.lidt(@intFromPtr(&idt), @as(u16, @intCast(@sizeOf(@TypeOf(idt)))));
 }
 
 export fn trap(tf: *x86.trapframe) void {
@@ -66,9 +66,9 @@ export fn trap(tf: *x86.trapframe) void {
             tickslock.acquire();
             ticks += 1;
             if (ticks == 10) {
-                console.printf("ticks = {}", .{ ticks });
+                console.printf("ticks = {}", .{ticks});
             }
-            proc.wakeup(@ptrToInt(&ticks));
+            proc.wakeup(@intFromPtr(&ticks));
             tickslock.release();
             lapic.lapiceoi();
         },
@@ -87,7 +87,10 @@ export fn trap(tf: *x86.trapframe) void {
             // TODO: implement
         },
         else => {
-            asm volatile ("movl %[eip], %%eax" : : [eip] "r" (tf.eip));
+            asm volatile ("movl %[eip], %%eax"
+                :
+                : [eip] "r" (tf.eip),
+            );
             asm volatile ("1: jmp 1b");
         },
     }

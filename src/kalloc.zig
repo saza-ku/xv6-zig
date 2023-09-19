@@ -46,11 +46,13 @@ fn kfree(v: usize) void {
     //panic("kfree");
 
     // Fill with junk to catch dangling refs.
-    for (@intToPtr([*]u8, v)[0..mmu.PGSIZE]) |*b| { b.* = 1; }
+    for (@as([*]u8, @ptrFromInt(v))[0..mmu.PGSIZE]) |*b| {
+        b.* = 1;
+    }
 
     //if(kmem.use_lock)
     //    acquire(&kmem.lock);
-    r = @intToPtr(*run, v);
+    r = @as(*run, @ptrFromInt(v));
     r.*.next = kmem.freelist;
     kmem.freelist = r;
 
@@ -77,7 +79,7 @@ pub fn kalloc() ?usize {
     var opt = kmem.freelist;
     if (opt) |r| {
         kmem.freelist = r.next;
-        return @ptrToInt(r);
+        return @intFromPtr(r);
     }
 
     return null;

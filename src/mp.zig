@@ -29,12 +29,13 @@ const mp = packed struct {
         if (self.signature1 != '_' or
             self.signature2 != 'M' or
             self.signature3 != 'P' or
-            self.signature4 != '_') {
+            self.signature4 != '_')
+        {
             return false;
         }
 
         // checksum
-        var bytes = @ptrCast([*]const u8, self)[0..@sizeOf(Self)];
+        var bytes = @as([*]const u8, @ptrCast(self))[0..@sizeOf(Self)];
         var sum: u8 = 0;
         for (bytes) |*b| {
             sum = sum +% b.*;
@@ -67,7 +68,8 @@ const mpconf = packed struct {
         if (self.signature1 != 'P' or
             self.signature2 != 'C' or
             self.signature3 != 'M' or
-            self.signature4 != 'P') {
+            self.signature4 != 'P')
+        {
             return false;
         }
 
@@ -76,7 +78,7 @@ const mpconf = packed struct {
         }
 
         // checksum
-        var bytes = @ptrCast([*]const u8, self)[0..self.length];
+        var bytes = @as([*]const u8, @ptrCast(self))[0..self.length];
         var sum: u8 = 0;
         for (bytes) |*b| {
             sum = sum +% b.*;
@@ -118,7 +120,7 @@ const entry = enum(u8) {
 // Look for an MP structure in the len bytes at addr
 fn mpsearch1(a: usize, len: usize) ?*mp {
     var addr = memlayout.p2v(a);
-    var slice = @intToPtr([*]mp, addr)[0..len / @sizeOf(mp)];
+    var slice = @as([*]mp, @ptrFromInt(addr))[0 .. len / @sizeOf(mp)];
     for (slice) |*p| {
         if (p.isValid()) {
             return p;
@@ -134,15 +136,15 @@ fn mpsearch1(a: usize, len: usize) ?*mp {
 // 2) in the last KB of system base memory;
 // 3) in the BIOS ROM between 0xE0000 and 0xFFFFF.
 fn mpsearch() ?*mp {
-    var bda = @intToPtr([*]u8, memlayout.p2v(0x400));
+    var bda = @as([*]u8, @ptrFromInt(memlayout.p2v(0x400)));
 
-    var p: usize = ((@intCast(usize, bda[0x0F]) << 8) | @intCast(usize, bda[0x0E])) << 4;
+    var p: usize = ((@as(usize, @intCast(bda[0x0F])) << 8) | @as(usize, @intCast(bda[0x0E]))) << 4;
     var result = mpsearch1(p, 1024);
     if (result) |m| {
         return m;
     }
 
-    p = ((@intCast(usize, bda[0x14]) << 8) | @intCast(usize, bda[0x13])) * 1024;
+    p = ((@as(usize, @intCast(bda[0x14])) << 8) | @as(usize, @intCast(bda[0x13]))) * 1024;
     result = mpsearch1(p - 1024, 1024);
     if (result) |m| {
         return m;
@@ -162,7 +164,7 @@ fn mpconfig(p: **mp) ?*mpconf {
         return null;
     }
 
-    var conf = @intToPtr(*mpconf, memlayout.p2v(pmp.physaddr));
+    var conf = @as(*mpconf, @ptrFromInt(memlayout.p2v(pmp.physaddr)));
     if (!conf.isValid()) {
         return null;
     }
@@ -179,13 +181,13 @@ pub fn mpinit() void {
 
     lapic.lapic = conf.lapicaddr;
 
-    var p = @ptrToInt(conf) + @sizeOf(mpconf);
-    const e = @ptrToInt(conf) + conf.length;
+    var p = @intFromPtr(conf) + @sizeOf(mpconf);
+    const e = @intFromPtr(conf) + conf.length;
     while (p < e) {
-        const typ = @intToEnum(entry, @intToPtr(*u8, p).*);
-        switch(typ) {
+        const typ = @as(entry, @enumFromInt(@as(*u8, @ptrFromInt(p)).*));
+        switch (typ) {
             .MPPROC => {
-                var proc_entry = @intToPtr(*mpproc, p);
+                var proc_entry = @as(*mpproc, @ptrFromInt(p));
                 if (ncpu < param.NCPU) {
                     cpus[ncpu].apicid = proc_entry.apicid;
                     ncpu += 1;
@@ -193,7 +195,7 @@ pub fn mpinit() void {
                 p += @sizeOf(mpproc);
             },
             .MPIOAPIC => {
-                var ioapic_entry = @intToPtr(*mpioapic, p);
+                var ioapic_entry = @as(*mpioapic, @ptrFromInt(p));
                 ioapicid = ioapic_entry.apicno;
                 p += @sizeOf(mpioapic);
             },
