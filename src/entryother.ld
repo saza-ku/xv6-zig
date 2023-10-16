@@ -1,0 +1,6 @@
+OUTPUT_ARCH(i386)
+ENTRY(start)
+SECTIONS
+{
+	. = 0x7000;
+}

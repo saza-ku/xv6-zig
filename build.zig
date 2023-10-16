@@ -23,7 +23,6 @@ pub fn build(b: *Builder) void {
 
     const optimize = b.standardOptimizeOption(.{});
 
-    // objects for assembly
     const main_obj = b.addObject(std.Build.ObjectOptions{
         .name = "main",
         .root_source_file = .{ .path = "src/main.zig" },
@@ -44,6 +43,17 @@ pub fn build(b: *Builder) void {
     kernel.addObject(main_obj);
     kernel.code_model = .kernel;
     b.installArtifact(kernel);
+
+    const entryother = b.addExecutable(.{
+        .name = "entryother.elf",
+        .root_source_file = .{ .path = "src/entryother.zig" },
+        .optimize = optimize,
+        .target = target,
+        .linkage = std.build.CompileStep.Linkage.static,
+    });
+    entryother.setLinkerScriptPath(.{ .path = "src/entryother.ld" });
+    entryother.code_model = .kernel;
+    b.installArtifact(entryother);
 
     const kernel_step = b.step("kernel", "Build the kernel");
     kernel_step.dependOn(&kernel.step);
