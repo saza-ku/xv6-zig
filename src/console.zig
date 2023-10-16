@@ -289,5 +289,8 @@ fn logCallback(context: void, str: []const u8) LoggingError!usize {
     // Suppress unused var warning
     _ = context;
     puts(str);
+    for (str) |c| {
+        uart.putc(c);
+    }
     return str.len;
 }

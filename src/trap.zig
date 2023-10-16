@@ -6,6 +6,7 @@ const lapic = @import("lapic.zig");
 const mmu = @import("mmu.zig");
 const proc = @import("proc.zig");
 const spinlock = @import("spinlock.zig");
+const uart = @import("uart.zig");
 const x86 = @import("x86.zig");
 
 // Processor-defined
@@ -84,6 +85,8 @@ export fn trap(tf: *x86.trapframe) void {
             // TODO: implement
         },
         T_IRQ0 + IRQ_COM1 => {
+            uart.uartintr();
+            lapic.lapiceoi();
             // TODO: implement
         },
         else => {

@@ -1,3 +1,4 @@
+const console = @import("console.zig");
 const ioapic = @import("ioapic.zig");
 const lapic = @import("lapic.zig");
 const trap = @import("trap.zig");
@@ -57,4 +58,8 @@ fn getc() ?u8 {
         return null;
     }
     return x86.in(u8, COM1 + 0);
+}
+
+pub fn uartintr() void {
+    console.consoleintr(getc);
 }
