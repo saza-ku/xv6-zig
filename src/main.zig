@@ -32,7 +32,7 @@ export fn main() noreturn {
     bio.binit();
     // ide.ideinit();
     trap.idtinit();
-    // TODO: startothers()
+    startothers();
     kalloc.kinit2(memlayout.p2v(4 * 1024 * 1024), memlayout.p2v(memlayout.PHYSTOP));
 
     console.initialize();
@@ -65,4 +65,11 @@ fn locktest() void {
     l.release();
     l.acquire();
     l.release();
+}
+
+extern var _binary_zig_out_bin_entryother_start: u8;
+extern var _binary_zig_out_bin_entryother_size: u8;
+fn startothers() void {
+    console.printf("_binary_entryother_start: {x}\n", .{@intFromPtr(&_binary_zig_out_bin_entryother_start)});
+    console.printf("_binary_entryother_size: {x}\n", .{@intFromPtr(&_binary_zig_out_bin_entryother_size)});
 }
