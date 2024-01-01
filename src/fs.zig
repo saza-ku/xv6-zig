@@ -194,7 +194,7 @@ var icache = struct {
 }{
     .lock = spinlock.spinlock.init("icache"),
     .inode = init: {
-        var initial_value: [param.INODE]file.inode = undefined;
+        const initial_value: [param.INODE]file.inode = undefined;
         for (initial_value) |*i| {
             i.lock = sleeplock.sleeplock.init("inode");
         }

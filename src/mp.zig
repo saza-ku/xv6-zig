@@ -35,7 +35,7 @@ const mp = packed struct {
         }
 
         // checksum
-        var bytes = @as([*]const u8, @ptrCast(self))[0..@sizeOf(Self)];
+        const bytes = @as([*]const u8, @ptrCast(self))[0..@sizeOf(Self)];
         var sum: u8 = 0;
         for (bytes) |*b| {
             sum = sum +% b.*;
@@ -78,7 +78,7 @@ const mpconf = packed struct {
         }
 
         // checksum
-        var bytes = @as([*]const u8, @ptrCast(self))[0..self.length];
+        const bytes = @as([*]const u8, @ptrCast(self))[0..self.length];
         var sum: u8 = 0;
         for (bytes) |*b| {
             sum = sum +% b.*;
@@ -119,8 +119,8 @@ const entry = enum(u8) {
 
 // Look for an MP structure in the len bytes at addr
 fn mpsearch1(a: usize, len: usize) ?*mp {
-    var addr = memlayout.p2v(a);
-    var slice = @as([*]mp, @ptrFromInt(addr))[0 .. len / @sizeOf(mp)];
+    const addr = memlayout.p2v(a);
+    const slice = @as([*]mp, @ptrFromInt(addr))[0 .. len / @sizeOf(mp)];
     for (slice) |*p| {
         if (p.isValid()) {
             return p;
@@ -136,7 +136,7 @@ fn mpsearch1(a: usize, len: usize) ?*mp {
 // 2) in the last KB of system base memory;
 // 3) in the BIOS ROM between 0xE0000 and 0xFFFFF.
 fn mpsearch() ?*mp {
-    var bda = @as([*]u8, @ptrFromInt(memlayout.p2v(0x400)));
+    const bda = @as([*]u8, @ptrFromInt(memlayout.p2v(0x400)));
 
     var p: usize = ((@as(usize, @intCast(bda[0x0F])) << 8) | @as(usize, @intCast(bda[0x0E]))) << 4;
     var result = mpsearch1(p, 1024);
@@ -159,7 +159,7 @@ fn mpsearch() ?*mp {
 // if correct, check the version.
 // To do: check extended table checksum.
 fn mpconfig(p: **mp) ?*mpconf {
-    var pmp = mpsearch() orelse return null;
+    const pmp = mpsearch() orelse return null;
     if (pmp.physaddr == 0) {
         return null;
     }
@@ -169,7 +169,7 @@ fn mpconfig(p: **mp) ?*mpconf {
         return null;
     }
 
-    var ppmp = p;
+    const ppmp = p;
     ppmp.* = pmp;
 
     return conf;
@@ -177,7 +177,7 @@ fn mpconfig(p: **mp) ?*mpconf {
 
 pub fn mpinit() void {
     var pmp: *mp = undefined;
-    var conf = mpconfig(&pmp) orelse return; // TODO: panic if null
+    const conf = mpconfig(&pmp) orelse return; // TODO: panic if null
 
     lapic.lapic = conf.lapicaddr;
 
@@ -187,7 +187,7 @@ pub fn mpinit() void {
         const typ = @as(entry, @enumFromInt(@as(*u8, @ptrFromInt(p)).*));
         switch (typ) {
             .MPPROC => {
-                var proc_entry = @as(*mpproc, @ptrFromInt(p));
+                const proc_entry = @as(*mpproc, @ptrFromInt(p));
                 if (ncpu < param.NCPU) {
                     cpus[ncpu].apicid = proc_entry.apicid;
                     ncpu += 1;
@@ -195,7 +195,7 @@ pub fn mpinit() void {
                 p += @sizeOf(mpproc);
             },
             .MPIOAPIC => {
-                var ioapic_entry = @as(*mpioapic, @ptrFromInt(p));
+                const ioapic_entry = @as(*mpioapic, @ptrFromInt(p));
                 ioapicid = ioapic_entry.apicno;
                 p += @sizeOf(mpioapic);
             },

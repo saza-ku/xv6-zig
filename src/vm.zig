@@ -36,7 +36,7 @@ comptime {
 extern fn set_segreg() void;
 
 pub fn seginit() void {
-    var c = &mp.cpus[proc.cpuid()];
+    const c = &mp.cpus[proc.cpuid()];
     if (proc.cpuid() == 1) {
         asm volatile ("1: jmp 1b");
     }
@@ -53,7 +53,7 @@ pub fn seginit() void {
 // that corresponds to virtual address va.  If alloc is true,
 // create any required page table pages.
 fn walkpgdir(pgdir: [*]mmu.pde_t, va: usize, alloc: bool) ?*mmu.pte_t {
-    var pde = &pgdir[mmu.pdx(va)];
+    const pde = &pgdir[mmu.pdx(va)];
     var pgtab: [*]mmu.pte_t = undefined;
     if (pde.* & mmu.PTE_P != 0) {
         pgtab = @as([*]mmu.pte_t, @ptrFromInt(memlayout.p2v(mmu.pteAddr(pde.*))));
@@ -80,9 +80,9 @@ fn walkpgdir(pgdir: [*]mmu.pde_t, va: usize, alloc: bool) ?*mmu.pte_t {
 fn mappages(pgdir: [*]mmu.pde_t, va: usize, size: usize, pa: usize, perm: usize) bool {
     var virt_addr = mmu.pgrounddown(va);
     var phys_addr = pa;
-    var last = mmu.pgrounddown(va +% size -% 1);
+    const last = mmu.pgrounddown(va +% size -% 1);
     while (true) {
-        var pte = walkpgdir(pgdir, virt_addr, true) orelse return false;
+        const pte = walkpgdir(pgdir, virt_addr, true) orelse return false;
         if (pte.* & mmu.PTE_P != 0) {
             sh.panic("remap");
         }
@@ -98,7 +98,7 @@ fn mappages(pgdir: [*]mmu.pde_t, va: usize, size: usize, pa: usize, perm: usize)
 
 // Set up kernel part of a page table.
 fn setupkvm() ?[*]mmu.pde_t {
-    var pgdir = @as([*]mmu.pde_t, @ptrFromInt(kalloc.kalloc() orelse return null));
+    const pgdir = @as([*]mmu.pde_t, @ptrFromInt(kalloc.kalloc() orelse return null));
     for (@as([*]u8, @ptrCast(pgdir))[0..mmu.PGSIZE]) |*b| {
         b.* = 0;
     }

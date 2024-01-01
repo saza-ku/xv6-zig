@@ -76,7 +76,7 @@ pub fn kalloc() ?usize {
     }
     //if(kmem.use_lock)
     //    acquire(&kmem.lock);
-    var opt = kmem.freelist;
+    const opt = kmem.freelist;
     if (opt) |r| {
         kmem.freelist = r.next;
         return @intFromPtr(r);

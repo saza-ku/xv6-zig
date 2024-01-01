@@ -1,5 +1,5 @@
 pub fn memmov(dst: [*]u8, src: [*]const u8, n: usize) void {
-    var s = src;
+    const s = src;
     var d = dst;
     const sAddr = @intFromPtr(s);
     const dAddr = @intFromPtr(d);
