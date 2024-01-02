@@ -23,6 +23,8 @@ pub fn build(b: *Builder) void {
 
     const optimize = b.standardOptimizeOption(.{});
 
+    const build_initcode_step = buildInitcode(b);
+
     // objects for assembly
     const main_obj = b.addObject(std.Build.ObjectOptions{
         .name = "main",
@@ -42,11 +44,14 @@ pub fn build(b: *Builder) void {
     kernel.addAssemblyFile(.{ .path = "src/trapasm.S" });
     kernel.addAssemblyFile(.{ .path = "src/vector.S" });
     kernel.addObject(main_obj);
+    kernel.addObjectFile(.{ .path = "zig-out/bin/initcode.o" });
     kernel.code_model = .kernel;
     b.installArtifact(kernel);
 
     const kernel_step = b.step("kernel", "Build the kernel");
     kernel_step.dependOn(&kernel.step);
+
+    kernel.step.dependOn(build_initcode_step);
 
     const iso_dir = "./zig-cache/iso_root";
     const boot_dir = "./zig-cache/iso_root/boot";
@@ -70,4 +75,9 @@ pub fn build(b: *Builder) void {
 
     const run_step = b.step("run", "Run the kernel");
     run_step.dependOn(&run_cmd.step);
+}
+
+fn buildInitcode(b: *Builder) *std.Build.Step {
+    const build_initcode_command = b.addSystemCommand(&[_][]const u8{"./scripts/build_initcode.sh"});
+    return &build_initcode_command.step;
 }

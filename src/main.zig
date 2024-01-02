@@ -16,6 +16,8 @@ const vm = @import("vm.zig");
 
 extern const end: u8;
 
+extern const _binary_zig_out_bin_initcode_start: u16;
+
 export fn main() noreturn {
     const end_addr = @intFromPtr(&end);
     kalloc.kinit1(end_addr, memlayout.p2v(4 * 1024 * 1024));
@@ -34,6 +36,9 @@ export fn main() noreturn {
     trap.idtinit();
     // TODO: startothers()
     kalloc.kinit2(memlayout.p2v(4 * 1024 * 1024), memlayout.p2v(memlayout.PHYSTOP));
+
+    console.printf("initcode[0]: {x}\n", .{_binary_zig_out_bin_initcode_start >> 8});
+    console.printf("initcode start: {x}\n", .{&_binary_zig_out_bin_initcode_start});
 
     console.initialize();
 
