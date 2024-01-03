@@ -1,10 +1,14 @@
 const file = @import("file.zig");
+const kalloc = @import("kalloc.zig");
 const lapic = @import("lapic.zig");
 const mmu = @import("mmu.zig");
 const mp = @import("mp.zig");
 const param = @import("param.zig");
 const spinlock = @import("spinlock.zig");
 const x86 = @import("x86.zig");
+
+extern fn trapret() void;
+extern fn forkret() void;
 
 // Per-CPU state
 pub const cpu = struct {
@@ -38,11 +42,11 @@ pub const procstate = enum {
 // at the "Switch stacks" comment. Switch doesn't save eip explicitly,
 // but it is on the stack and allocproc() manipulates it.
 pub const context = struct {
-    edi: u32,
-    esi: u32,
-    ebx: u32,
-    ebp: u32,
-    eip: u32,
+    edi: u32 = 0,
+    esi: u32 = 0,
+    ebx: u32 = 0,
+    ebp: u32 = 0,
+    eip: u32 = 0,
 };
 
 // Per-process state
@@ -69,6 +73,8 @@ var ptable = struct {
     .lock = spinlock.spinlock.init("ptable"),
     .proc = undefined,
 };
+
+var nextpid: usize = 1;
 
 // Process memory is laid out contiguously, low addresses first:
 //   text
@@ -104,6 +110,48 @@ pub fn myproc() *proc {
     const p = c.proc;
     spinlock.popcli();
     return p;
+}
+
+// Look in the process table for an UNUSED proc.
+// If found, change state to EMBRYO and initialize
+// state required to run in the kernel.
+// Otherwise return null.
+pub fn allocproc() ?*proc {
+    ptable.lock.acquire();
+
+    for (&ptable.proc) |*p| {
+        if (p.state == procstate.UNUSED) {
+            p.*.state = procstate.EMBRYO;
+            p.*.pid = nextpid;
+            nextpid += 1;
+            ptable.lock.release();
+
+            // Allocate kernel stack.
+            p.*.kstack = kalloc.kalloc() orelse {
+                p.*.state = procstate.UNUSED;
+                return null;
+            };
+            const sp = p.kstack + param.KSTACKSIZE;
+
+            // Leave room for trap frame.
+            sp -= @sizeOf(x86.trapframe);
+            p.*.tf = @as(*x86.trapframe, @ptrCast(sp));
+
+            // Set up new context to start executing at forkret, which returns to trapret.
+            sp -= 4;
+            const trapret_pointer = @as(*const fn () void, @ptrFromInt(sp));
+            trapret_pointer.* = trapret;
+
+            sp -= @sizeOf(context);
+            p.*.context = @as(*context, @ptrCast(sp));
+            p.*.context = context{};
+            p.*.context.eip = @intFromPtr(forkret);
+            return p;
+        }
+    }
+
+    ptable.lock.release();
+    return null;
 }
 
 pub fn sleep(chan: usize, lk: *spinlock.spinlock) void {
