@@ -8,7 +8,6 @@ const spinlock = @import("spinlock.zig");
 const x86 = @import("x86.zig");
 
 extern fn trapret() void;
-extern fn forkret() void;
 
 // Per-CPU state
 pub const cpu = struct {
@@ -181,6 +180,22 @@ pub fn sleep(chan: usize, lk: *spinlock.spinlock) void {
         ptable.lock.release();
         lk.acquire();
     }
+}
+
+fn forkret() callconv(.C) void {
+    const S = struct {
+        var first: bool = true;
+    };
+
+    // Still holding ptable.lock from scheduler.
+    ptable.lock.release();
+
+    if (S.first) {
+        S.first = false;
+        // TOOD: iinit, initlog
+    }
+
+    // Return to "caller", actually trapret (see allocproc).
 }
 
 // Wake up all processes sleeping on chan.
