@@ -4,6 +4,7 @@ const mmu = @import("mmu.zig");
 const mp = @import("mp.zig");
 const sh = @import("sh.zig");
 const proc = @import("proc.zig");
+const util = @import("util.zig");
 const x86 = @import("x86.zig");
 
 extern const data: u8; // defined by kernel.ld
@@ -163,4 +164,15 @@ pub fn kvmalloc() ?void {
 
 fn switchkvm() void {
     x86.lcr3(memlayout.v2p(@intFromPtr(kpgdir)));
+}
+
+pub fn inituvm(pgdir: [*]mmu.pde_t, src: [*]u8, sz: usize) void {
+    if (sz > mmu.PGSIZE) {
+        sh.panic("inituvm: more than a page");
+    }
+
+    const mem = kalloc.kalloc() orelse unreachable;
+    @memset(@as([*]u8, @ptrFromInt(mem))[0..mmu.PGSIZE], 0);
+    mappages(pgdir, 0, mmu.PGSIZE, memlayout.v2p(mem), mmu.PTE_W | mmu.PTE_U);
+    util.memmov(@as([*]u8, @ptrFromInt(mem)), src, sz);
 }
