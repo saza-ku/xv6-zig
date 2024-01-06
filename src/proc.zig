@@ -13,7 +13,9 @@ const x86 = @import("x86.zig");
 extern fn trapret() void;
 
 extern const _binary_zig_out_bin_initcode_start: u8;
-extern const _binary_zig_out_bin_initcode_size: usize;
+// Note: This value of a symbol is its address,
+// and the address is the size of initcode.
+extern const _binary_zig_out_bin_initcode_size: u8;
 
 var initproc: *proc = undefined;
 
@@ -166,7 +168,8 @@ pub fn userinit() void {
 
     initproc = p;
     p.*.pgdir = vm.setupkvm() orelse @panic("usetinit: out of memory?");
-    vm.inituvm(p.pgdir, @as([*]u8, @ptrCast(&_binary_zig_out_bin_initcode_start)), _binary_zig_out_bin_initcode_size);
+
+    vm.inituvm(p.pgdir, @as([*]u8, @ptrCast(&_binary_zig_out_bin_initcode_start)), @intFromPtr(&_binary_zig_out_bin_initcode_size));
     p.*.sz = mmu.PGSIZE;
     @memset(@as([*]u8, @ptrCast(p.*.tf))[0..@sizeOf(x86.trapframe)], 0);
     p.*.tf.cs = (mmu.SEG_UCODE << 3) | mmu.DPL_USER;

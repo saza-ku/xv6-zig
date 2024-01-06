@@ -76,7 +76,11 @@ pub fn build(b: *Builder) void {
         "512",
         "-smp",
         "1",
+        "-no-shutdown",
+        "-no-reboot",
         "-nographic",
+        "-gdb",
+        "tcp::12345",
     };
 
     const run_cmd = b.addSystemCommand(run_cmd_str);
