@@ -98,7 +98,7 @@ fn mappages(pgdir: [*]mmu.pde_t, va: usize, size: usize, pa: usize, perm: usize)
 }
 
 // Set up kernel part of a page table.
-fn setupkvm() ?[*]mmu.pde_t {
+pub fn setupkvm() ?[*]mmu.pde_t {
     const pgdir = @as([*]mmu.pde_t, @ptrFromInt(kalloc.kalloc() orelse return null));
     for (@as([*]u8, @ptrCast(pgdir))[0..mmu.PGSIZE]) |*b| {
         b.* = 0;
@@ -173,6 +173,6 @@ pub fn inituvm(pgdir: [*]mmu.pde_t, src: [*]u8, sz: usize) void {
 
     const mem = kalloc.kalloc() orelse unreachable;
     @memset(@as([*]u8, @ptrFromInt(mem))[0..mmu.PGSIZE], 0);
-    mappages(pgdir, 0, mmu.PGSIZE, memlayout.v2p(mem), mmu.PTE_W | mmu.PTE_U);
+    _ = mappages(pgdir, 0, mmu.PGSIZE, memlayout.v2p(mem), mmu.PTE_W | mmu.PTE_U);
     util.memmov(@as([*]u8, @ptrFromInt(mem)), src, sz);
 }

@@ -1,13 +1,21 @@
 const file = @import("file.zig");
 const kalloc = @import("kalloc.zig");
 const lapic = @import("lapic.zig");
+const memlayout = @import("memlayout.zig");
 const mmu = @import("mmu.zig");
 const mp = @import("mp.zig");
 const param = @import("param.zig");
 const spinlock = @import("spinlock.zig");
+const util = @import("util.zig");
+const vm = @import("vm.zig");
 const x86 = @import("x86.zig");
 
 extern fn trapret() void;
+
+extern const _binary_zig_out_bin_initcode_start: u8;
+extern const _binary_zig_out_bin_initcode_size: usize;
+
+var initproc: *proc = undefined;
 
 // Per-CPU state
 pub const cpu = struct {
@@ -51,18 +59,18 @@ pub const context = struct {
 // Per-process state
 pub const proc = struct {
     sz: usize, // Size of process memory (bytes)
-    pgdir: *mmu.pde_t, // Page table
+    pgdir: [*]mmu.pde_t, // Page table
     kstack: usize, // Bottom of kernel stack for this process
     state: procstate, // Process state
     pid: u32, // Process ID
     parent: ?*proc, // Parent process
-    tf: ?*x86.trapframe, // Trap frame for current syscall
-    context: ?*context, // swtch() here to run process
+    tf: *x86.trapframe, // Trap frame for current syscall
+    context: *context, // swtch() here to run process
     chan: usize, // If non-zero, sleeping on chan
     killed: bool, // Whether it's been killed
     ofile: *[param.NOFILE]file.file, // Open files
     cwd: ?*file.inode, // Current directory
-    name: []const u8, // Process name (debugging)
+    name: [16]u8, // Process name (debugging)
 };
 
 var ptable = struct {
@@ -130,27 +138,56 @@ pub fn allocproc() ?*proc {
                 p.*.state = procstate.UNUSED;
                 return null;
             };
-            const sp = p.kstack + param.KSTACKSIZE;
+            var sp = p.kstack + param.KSTACKSIZE;
 
             // Leave room for trap frame.
             sp -= @sizeOf(x86.trapframe);
-            p.*.tf = @as(*x86.trapframe, @ptrCast(sp));
+            p.*.tf = @as(*x86.trapframe, @ptrFromInt(sp));
 
             // Set up new context to start executing at forkret, which returns to trapret.
             sp -= 4;
-            const trapret_pointer = @as(*const fn () void, @ptrFromInt(sp));
+            const trapret_pointer = @as(**const fn () callconv(.C) void, @ptrFromInt(sp));
             trapret_pointer.* = trapret;
 
             sp -= @sizeOf(context);
-            p.*.context = @as(*context, @ptrCast(sp));
-            p.*.context = context{};
-            p.*.context.eip = @intFromPtr(forkret);
+            p.*.context = @as(*context, @ptrFromInt(sp));
+            p.*.context.* = context{};
+            p.*.context.eip = @intFromPtr(&forkret);
             return p;
         }
     }
 
     ptable.lock.release();
     return null;
+}
+
+pub fn userinit() void {
+    const p = allocproc() orelse unreachable;
+
+    initproc = p;
+    p.*.pgdir = vm.setupkvm() orelse @panic("usetinit: out of memory?");
+    vm.inituvm(p.pgdir, @as([*]u8, @ptrCast(&_binary_zig_out_bin_initcode_start)), _binary_zig_out_bin_initcode_size);
+    p.*.sz = mmu.PGSIZE;
+    @memset(@as([*]u8, @ptrCast(p.*.tf))[0..@sizeOf(x86.trapframe)], 0);
+    p.*.tf.cs = (mmu.SEG_UCODE << 3) | mmu.DPL_USER;
+    p.*.tf.ds = (mmu.SEG_UDATA << 3) | mmu.DPL_USER;
+    p.*.tf.es = p.*.tf.ds;
+    p.*.tf.ss = p.*.tf.ds;
+    p.*.tf.eflags = mmu.FL_IF;
+    p.*.tf.esp = mmu.PGSIZE;
+    p.*.tf.eip = 0; // beginning of initcode.S
+
+    util.safestrcpy(&p.*.name, "initcode");
+    // p.*.cwd = namei("/");
+
+    // Tell entryother.S what stack to use, where to enter, and what
+    // pgdir to use. We cannot use kpgdir yet, because the AP processor
+    // is running in low  memory, so we use entrypgdir for the APs too.
+    ptable.lock.acquire();
+
+    p.*.state = procstate.RUNNABLE;
+
+    ptable.lock.release();
 }
 
 pub fn sleep(chan: usize, lk: *spinlock.spinlock) void {
