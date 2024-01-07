@@ -58,7 +58,10 @@ pub fn idtinit() void {
 }
 
 export fn trap(tf: *x86.trapframe) void {
+    console.printf("trap {}", .{tf.trapno});
     if (tf.trapno == T_SYSCALL) {
+        console.printf("eax = {}", .{tf.eax});
+        panicHandler(tf);
         // TODO: system call
     }
 
@@ -99,4 +102,18 @@ export fn trap(tf: *x86.trapframe) void {
     }
 
     // TODO: implement
+}
+
+fn panicHandler(tf: *x86.trapframe) void {
+    const base = tf.ebp;
+    const message = @as([*]u8, @ptrFromInt(base + 8))[0..1000];
+    console.printf("hogehoge", .{});
+
+    for (message) |c| {
+        if (c == 0) {
+            break;
+        }
+        console.putChar(c);
+    }
+    console.putChar('\n');
 }
