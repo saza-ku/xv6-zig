@@ -68,7 +68,7 @@ pub fn build(b: *Builder) void {
     iso_step.dependOn(&iso_cmd.step);
     b.default_step.dependOn(iso_step);
 
-    const run_cmd_str = &[_][]const u8{
+    const run_cmd_str = [_][]const u8{
         "qemu-system-i386",
         "-drive",
         "file=zig-out/bin/disk.iso,index=0,media=disk,format=raw",
@@ -80,14 +80,24 @@ pub fn build(b: *Builder) void {
         "-no-reboot",
         "-nographic",
         "-gdb",
-        "tcp::12345",
+        "tcp::1234",
     };
 
-    const run_cmd = b.addSystemCommand(run_cmd_str);
+    const run_cmd = b.addSystemCommand(&run_cmd_str);
     run_cmd.step.dependOn(b.getInstallStep());
 
     const run_step = b.step("run", "Run the kernel");
     run_step.dependOn(&run_cmd.step);
+
+    const debug_cmd_str = run_cmd_str ++ [_][]const u8{
+        "-S",
+    };
+
+    const debug_cmd = b.addSystemCommand(&debug_cmd_str);
+    debug_cmd.step.dependOn(b.getInstallStep());
+
+    const debug_step = b.step("debug", "Debug the kernel");
+    debug_step.dependOn(&debug_cmd.step);
 }
 
 fn buildInitcode(b: *Builder) *std.Build.Step {

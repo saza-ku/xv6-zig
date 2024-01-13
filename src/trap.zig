@@ -58,10 +58,7 @@ pub fn idtinit() void {
 }
 
 export fn trap(tf: *x86.trapframe) void {
-    console.printf("trap {}", .{tf.trapno});
     if (tf.trapno == T_SYSCALL) {
-        console.printf("eax = {}", .{tf.eax});
-        panicHandler(tf);
         // TODO: system call
     }
 
