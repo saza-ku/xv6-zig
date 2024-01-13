@@ -18,6 +18,7 @@ pub fn memmov(dst: [*]u8, src: [*]const u8, n: usize) void {
 }
 
 pub fn safestrcpy(dst: *[16]u8, src: []const u8) void {
-    @memcpy(dst, src[0 .. src.len + 1]);
-    dst[15] = 0;
+    const len = @min(src.len, dst.len - 1);
+    @memcpy(dst[0..len], src[0..len]);
+    dst[len + 1] = 0;
 }
