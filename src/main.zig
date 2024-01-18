@@ -42,8 +42,16 @@ export fn main() noreturn {
 
     locktest();
 
-    asm volatile ("sti");
-    while (true) {}
+    mpmain();
+
+    unreachable;
+}
+
+fn mpmain() void {
+    console.printf("cpu{}: starting {}\n", .{ proc.cpuid(), proc.cpuid() });
+    // TODO: idtinit()
+    @atomicStore(bool, &proc.mycpu().started, true, std.builtin.AtomicOrder.SeqCst);
+    proc.scheduler();
 }
 
 // The boot page table used in entry.S and entryother.S.

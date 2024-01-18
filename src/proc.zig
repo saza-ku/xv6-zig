@@ -1,3 +1,4 @@
+const console = @import("console.zig");
 const file = @import("file.zig");
 const kalloc = @import("kalloc.zig");
 const lapic = @import("lapic.zig");
@@ -28,7 +29,7 @@ pub const cpu = struct {
     started: bool, // Has the CPU started?
     ncli: u32, // Depth of pushcli nesting.
     intena: bool, // Were interrupts enabled before pushcli?
-    proc: *proc,
+    proc: ?*proc,
 };
 
 pub const procstate = enum {
@@ -253,4 +254,42 @@ pub fn wakeup(chan: usize) void {
     ptable.lock.acquire();
     wakeup1(chan);
     ptable.lock.release();
+}
+
+pub fn scheduler() void {
+    const c = mycpu();
+    c.proc = null;
+
+    while (true) {
+        x86.sti();
+
+        ptable.lock.acquire();
+        for (&ptable.proc) |*p| {
+            if (p.state != procstate.RUNNABLE) {
+                continue;
+            }
+
+            // Switch to chosen process. It is the process's job
+            // to release ptable.lock and then reacquire it
+            // before jumping back to us.
+            c.proc = p;
+            // TODO: switchuvm(p);
+            p.*.state = procstate.RUNNING;
+            // TODO: x86.swtch(@as(*context, @ptrFromInt(&c.*.scheduler)), @as(*context, @ptrFromInt(p.*.context)));
+            // TODO: switchkvm();
+
+            // Process is done running for now.
+            // It should have changed its p->state before coming back.
+            c.proc = null;
+        }
+        ptable.lock.release();
+
+        const S = struct {
+            var first: bool = true;
+        };
+        if (S.first) {
+            console.printf("Process Scheduling\n", .{});
+            S.first = false;
+        }
+    }
 }
