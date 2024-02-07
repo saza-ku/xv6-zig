@@ -56,6 +56,24 @@ pub const segdesc = packed struct {
             .base_31_24 = @as(u8, @intCast(base >> 24)),
         };
     }
+
+    pub fn new16(typ: u4, base: u32, lim: u32, dpl: u2) Self {
+        return Self{
+            .lim_15_0 = @as(u16, @intCast(lim & 0xffff)),
+            .base15_0 = @as(u16, @intCast(base & 0xffff)),
+            .base_23_16 = @as(u8, @intCast((base >> 16) & 0xff)),
+            .typ = typ,
+            .s = 1,
+            .dpl = dpl,
+            .p = 1,
+            .lim_19_16 = @as(u4, @intCast((lim >> 16) & 0xf)),
+            .avl = 0,
+            .rsv1 = 0,
+            .db = 1,
+            .g = 0,
+            .base_31_24 = @as(u8, @intCast(base >> 24)),
+        };
+    }
 };
 
 pub const DPL_KERNEL = 0x0; // Kernel DPL

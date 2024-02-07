@@ -3,6 +3,7 @@ const memlayout = @import("memlayout.zig");
 const mmu = @import("mmu.zig");
 const mp = @import("mp.zig");
 const sh = @import("sh.zig");
+const spinlock = @import("spinlock.zig");
 const proc = @import("proc.zig");
 const util = @import("util.zig");
 const x86 = @import("x86.zig");
@@ -164,6 +165,18 @@ pub fn kvmalloc() ?void {
 
 fn switchkvm() void {
     x86.lcr3(memlayout.v2p(@intFromPtr(kpgdir)));
+}
+
+pub fn switchuvm(p: *proc.proc) void {
+    if (p.kstack == 0) {
+        sh.panic("switchuvm: no kstack");
+    }
+
+    spinlock.pushcli();
+    defer spinlock.popcli();
+
+    const cpu = proc.mycpu();
+    _ = cpu;
 }
 
 pub fn inituvm(pgdir: [*]mmu.pde_t, src: [*]u8, sz: usize) void {

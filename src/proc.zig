@@ -81,7 +81,7 @@ var ptable = struct {
     proc: [param.NPROC]proc,
 }{
     .lock = spinlock.spinlock.init("ptable"),
-    .proc = undefined,
+    .proc = undefined, // TODO: initialize
 };
 
 var nextpid: usize = 1;
