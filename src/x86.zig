@@ -90,6 +90,13 @@ pub fn lcr3(addr: usize) void {
     );
 }
 
+pub fn ltr(sel: u16) void {
+    asm volatile ("ltr %[sel]"
+        :
+        : [sel] "r" (sel),
+    );
+}
+
 pub fn readeflags() u32 {
     return asm volatile ("pushfl; popl %[eflags]"
         : [eflags] "={eax}" (-> u32),

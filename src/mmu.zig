@@ -146,7 +146,39 @@ pub const taskstate = struct {
     esp0: u32, // Stack pointers and segment selectors
     ss0: u16, // after an increase in privilege level
     padding1: u16,
-    // TODO
+    esp1: *u32,
+    ss1: u16,
+    padding2: u16,
+    esp2: *u32,
+    ss2: u16,
+    padding3: u16,
+    cr3: *anyopaque, // Page directory base
+    eip: *u32, // Saved state from last task switch
+    eflags: u32,
+    eax: u32, // More saved state (registers)
+    ecx: u32,
+    edx: u32,
+    ebx: u32,
+    esp: *u32,
+    ebp: *u32,
+    esi: u32,
+    edi: u32,
+    es: u16, // Even more saved state (segment selectors)
+    padding4: u16,
+    cs: u16,
+    padding5: u16,
+    ss: u16,
+    padding6: u16,
+    ds: u16,
+    padding7: u16,
+    fs: u16,
+    padding8: u16,
+    gs: u16,
+    padding9: u16,
+    ldt: u16,
+    padding10: u16,
+    t: u16, // Trap on task switch
+    iomb: u16, // I/O map base address
 };
 
 pub const gatedesc = packed struct {

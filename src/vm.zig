@@ -4,6 +4,7 @@ const mmu = @import("mmu.zig");
 const mp = @import("mp.zig");
 const sh = @import("sh.zig");
 const spinlock = @import("spinlock.zig");
+const param = @import("param.zig");
 const proc = @import("proc.zig");
 const util = @import("util.zig");
 const x86 = @import("x86.zig");
@@ -176,7 +177,15 @@ pub fn switchuvm(p: *proc.proc) void {
     defer spinlock.popcli();
 
     const cpu = proc.mycpu();
-    _ = cpu;
+    cpu.gdt[mmu.SEG_TSS] = mmu.segdesc.new16(mmu.STS_T32A, @as(u32, @intCast(@intFromPtr(&cpu.ts))), @sizeOf(mmu.taskstate) - 1, 0);
+    cpu.gdt[mmu.SEG_TSS].s = 0;
+    cpu.ts.ss0 = mmu.SEG_KDATA << 3;
+    cpu.ts.esp0 = p.kstack + param.KSTACKSIZE;
+    // setting IOPL=0 in eflags *and* iomb beyond the tss segment limit
+    // forbids I/O instructions (e.g., inb and outb) from user space
+    cpu.ts.iomb = 0xFFFF;
+    x86.ltr(mmu.SEG_TSS << 3);
+    x86.lcr3(memlayout.v2p(@intFromPtr(p.pgdir)));
 }
 
 pub fn inituvm(pgdir: [*]mmu.pde_t, src: [*]u8, sz: usize) void {
