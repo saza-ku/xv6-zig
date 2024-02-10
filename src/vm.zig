@@ -164,7 +164,7 @@ pub fn kvmalloc() ?void {
     switchkvm();
 }
 
-fn switchkvm() void {
+pub fn switchkvm() void {
     x86.lcr3(memlayout.v2p(@intFromPtr(kpgdir)));
 }
 

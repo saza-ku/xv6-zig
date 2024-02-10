@@ -43,6 +43,7 @@ pub fn build(b: *Builder) void {
     kernel.setLinkerScriptPath(.{ .path = "src/kernel.ld" });
     kernel.addAssemblyFile(.{ .path = "src/trapasm.S" });
     kernel.addAssemblyFile(.{ .path = "src/vector.S" });
+    kernel.addAssemblyFile(.{ .path = "src/swtch.S" });
     kernel.addObject(main_obj);
     kernel.addObjectFile(.{ .path = "zig-out/bin/initcode.o" });
     kernel.code_model = .kernel;

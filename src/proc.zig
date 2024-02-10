@@ -23,7 +23,7 @@ var initproc: *proc = undefined;
 // Per-CPU state
 pub const cpu = struct {
     apicid: u16, // Local APIC ID
-    scheduler: ?*context, // swtch() here to enter scheduler
+    scheduler: *context, // swtch() here to enter scheduler
     ts: mmu.taskstate, // Used by x86 to find stack for interrupt
     gdt: [mmu.NSEGS]mmu.segdesc, // x86 global descripter table
     started: bool, // Has the CPU started?
@@ -256,9 +256,24 @@ pub fn wakeup(chan: usize) void {
     ptable.lock.release();
 }
 
+// Per-CPU process scheduler.
+// Each CPU calls scheduler() after setting itself up.
+// Scheduler never returns.  It loops, doing:
+//  - choose a process to run
+//  - swtch to start running that process
+//  - eventually that process transfers control
+//      via swtch back to the scheduler.
 pub fn scheduler() void {
     const c = mycpu();
     c.proc = null;
+
+    const S = struct {
+        var first: bool = true;
+    };
+    if (S.first) {
+        console.printf("Process Scheduling\n", .{});
+        S.first = false;
+    }
 
     while (true) {
         x86.sti();
@@ -273,23 +288,15 @@ pub fn scheduler() void {
             // to release ptable.lock and then reacquire it
             // before jumping back to us.
             c.proc = p;
-            // TODO: switchuvm(p);
+            vm.switchuvm(p);
             p.*.state = procstate.RUNNING;
-            // TODO: x86.swtch(@as(*context, @ptrFromInt(&c.*.scheduler)), @as(*context, @ptrFromInt(p.*.context)));
-            // TODO: switchkvm();
+            x86.swtch(&c.scheduler, p.context);
+            vm.switchkvm();
 
             // Process is done running for now.
             // It should have changed its p->state before coming back.
             c.proc = null;
         }
         ptable.lock.release();
-
-        const S = struct {
-            var first: bool = true;
-        };
-        if (S.first) {
-            console.printf("Process Scheduling\n", .{});
-            S.first = false;
-        }
     }
 }

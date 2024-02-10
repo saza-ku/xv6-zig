@@ -1,3 +1,7 @@
+const proc = @import("proc.zig");
+
+pub extern fn swtch(old: **proc.context, new: *proc.context) callconv(.C) void;
+
 pub fn in(comptime Type: type, port: u16) Type {
     return switch (Type) {
         u8 => asm volatile ("inb %[port], %[result]"
