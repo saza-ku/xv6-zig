@@ -60,6 +60,7 @@ pub fn idtinit() void {
 export fn trap(tf: *x86.trapframe) void {
     if (tf.trapno == T_SYSCALL) {
         // TODO: system call
+        console.printf("syscall\n", .{});
     }
 
     switch (tf.trapno) {

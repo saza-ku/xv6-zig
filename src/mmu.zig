@@ -141,7 +141,7 @@ pub const PTE_PS = 0x080; // Page Size
 pub const pte_t = usize;
 pub const pde_t = usize;
 
-pub const taskstate = struct {
+pub const taskstate = extern struct {
     link: u32, // Old ts selector
     esp0: u32, // Stack pointers and segment selectors
     ss0: u16, // after an increase in privilege level

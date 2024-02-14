@@ -51,7 +51,7 @@ pub const procstate = enum {
 // The layout of the context matches the layout of the stack in swtch.zig
 // at the "Switch stacks" comment. Switch doesn't save eip explicitly,
 // but it is on the stack and allocproc() manipulates it.
-pub const context = struct {
+pub const context = extern struct {
     edi: u32 = 0,
     esi: u32 = 0,
     ebx: u32 = 0,

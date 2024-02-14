@@ -32,7 +32,6 @@ export fn main() noreturn {
     trap.tvinit();
     bio.binit();
     // ide.ideinit();
-    trap.idtinit();
     // TODO: startothers()
     kalloc.kinit2(memlayout.p2v(4 * 1024 * 1024), memlayout.p2v(memlayout.PHYSTOP));
 
@@ -49,7 +48,7 @@ export fn main() noreturn {
 
 fn mpmain() void {
     console.printf("cpu{}: starting {}\n", .{ proc.cpuid(), proc.cpuid() });
-    // TODO: idtinit()
+    trap.idtinit();
     @atomicStore(bool, &proc.mycpu().started, true, std.builtin.AtomicOrder.SeqCst);
     proc.scheduler();
 }
