@@ -1,6 +1,7 @@
 const bio = @import("bio.zig");
 const fs = @import("fs.zig");
 const param = @import("param.zig");
+const proc = @import("proc.zig");
 const spinlock = @import("spinlock.zig");
 
 // Simple logging that allows concurrent FS system calls.
@@ -36,7 +37,7 @@ const Log = struct {
     start: i32, // block number of first log block
     size: i32, // number of log blocks
     outstanding: i32, // how many FS sys calls are executing.
-    committing: i32, // in commit(), please wait.
+    committing: bool = false, // in commit(), please wait.
     dev: i32,
     lh: LogHeader,
 };
@@ -56,4 +57,20 @@ pub fn initlog(dev: i32) void {
     log.dev = dev;
 
     // recover_from_log();
+}
+
+pub fn begin_op() void {
+    log.lock.acquire();
+    while (true) {
+        if (log.committing) {
+            proc.sleep(@intFromPtr(log), &log.lock);
+        } else if (log.lh.n + (log.outstanding + 1) * param.MAXOPBLOCKS > param.LOGSIZE) {
+            // this op might exhaust log space; wait for commit.
+            proc.sleep(@intFromPtr(log), &log.lock);
+        } else {
+            log.outstanding += 1;
+            log.lock.release();
+            break;
+        }
+    }
 }
