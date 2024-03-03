@@ -19,13 +19,13 @@ const util = @import("util.zig");
 pub const BSIZE = 512;
 
 pub const superblock = struct {
-    size: u32, // Size of file system image (blocks)
-    nblocks: u32, // Number of data blocks
-    ninodes: u32, // Number of inodes.
-    nlog: u32, // Number of log blocks
-    logstart: u32, // Block number of first log block
-    inodestart: u32, // Block number of first inode block
-    bmapstart: u32, // Block number of first free map block
+    size: u32 = 0, // Size of file system image (blocks)
+    nblocks: u32 = 0, // Number of data blocks
+    ninodes: u32 = 0, // Number of inodes.
+    nlog: u32 = 0, // Number of log blocks
+    logstart: u32 = 0, // Block number of first log block
+    inodestart: u32 = 0, // Block number of first inode block
+    bmapstart: u32 = 0, // Block number of first free map block
 };
 
 pub var sb: superblock = undefined;

@@ -1,3 +1,8 @@
+const bio = @import("bio.zig");
+const fs = @import("fs.zig");
+const param = @import("param.zig");
+const spinlock = @import("spinlock.zig");
+
 // Simple logging that allows concurrent FS system calls.
 //
 // A log transaction contains the updates of multiple FS system
@@ -20,3 +25,35 @@
 //   block C
 //   ...
 // Log appends are synchronous.
+
+const LogHeader = struct {
+    n: i32, // number of blocks
+    block: [param.LOGSIZE]i32, // disk block numbers
+};
+
+const Log = struct {
+    lock: spinlock.spinlock,
+    start: i32, // block number of first log block
+    size: i32, // number of log blocks
+    outstanding: i32, // how many FS sys calls are executing.
+    committing: i32, // in commit(), please wait.
+    dev: i32,
+    lh: LogHeader,
+};
+
+var log: Log = undefined;
+
+pub fn initlog(dev: i32) void {
+    if (@sizeOf(LogHeader) >= fs.BSIZE) {
+        bio.panic("initlog: too big log");
+    }
+
+    var sb = fs.superblock{};
+    log.lock = spinlock.init("log");
+    fs.readsb(dev, &sb);
+    log.start = sb.logstart;
+    log.size = sb.nlog;
+    log.dev = dev;
+
+    // recover_from_log();
+}
