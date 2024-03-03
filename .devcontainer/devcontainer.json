@@ -1,0 +1,24 @@
+{
+	"name": "Ubuntu",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"args": { "VARIANT": "ubuntu-22.04" }
+	},
+
+	"remoteUser": "vscode",
+	"runArgs": [
+		"-e", "DISPLAY=:0.0",
+		"--net", "host",
+		"-v", "/tmp/.X11-unix:/tmp/.X11-unix",
+		"--name", "xv6-zig"
+	],
+
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"tiehuis.zig",
+				"AugusteRame.zls-vscode"
+			]
+		}
+	}
+}
