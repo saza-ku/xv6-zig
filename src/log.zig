@@ -59,6 +59,7 @@ pub fn initlog(dev: i32) void {
     // recover_from_log();
 }
 
+// called at the start of each FS system call.
 pub fn begin_op() void {
     log.lock.acquire();
     while (true) {
@@ -72,5 +73,30 @@ pub fn begin_op() void {
             log.lock.release();
             break;
         }
+    }
+}
+
+// called at the end of each FS system call.
+// commits if this was the last outstanding operation.
+pub fn end_op() void {
+    var do_commit = false;
+    log.lock.acquire();
+    if (log.committing) {
+        @panic("log.commiting");
+    }
+    if (log.outstanding == 0) {
+        do_commit = true;
+        log.committing = true;
+    } else {
+        proc.wakeup(@intFromPtr(&log));
+    }
+    log.lock.release();
+
+    if (do_commit) {
+        // commit()
+        log.lock.acquire();
+        log.committing = false;
+        proc.wakeup(@intFromPtr(&log));
+        log.lock.release();
     }
 }
