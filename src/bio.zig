@@ -118,19 +118,18 @@ fn bget(dev: u32, blockno: u32) *buf {
 
     // Is the block already cached?
     var b = bcache.head.next;
-    while (b != &bcache.head) {
+    while (b != &bcache.head) : (b = b.next) {
         if (b.dev == dev and b.blockno == blockno) {
             b.*.refcnt += 1;
             return b;
         }
-        b = b.next;
     }
 
     // Not cached; recycle an unused buffer.
     // Even if refcnt==0, B_DIRTY indicates a buffer is in use
     // because log.c has modified it but not yet committed it.
     b = bcache.head.prev;
-    while (b != &bcache.head) {
+    while (b != &bcache.head) : (b = b.prev) {
         if (!b.is_used()) {
             b.*.dev = dev;
             b.*.blockno = blockno;
