@@ -100,3 +100,37 @@ pub fn end_op() void {
         log.lock.release();
     }
 }
+
+// Caller has modified b->data and is done with the buffer.
+// Record the block number and pin in the cache with B_DIRTY.
+// commit()/write_log() will do the disk write.
+//
+// log_write() replaces bwrite(); a typical use is:
+//   bp = bread(...)
+//   modify bp->data[]
+//   log_write(bp)
+//   brelse(bp)
+pub fn log_write(b: *bio.buf) void {
+    if (log.lh.n >= param.LOGSIZE or log.lh.n >= log.size - 1) {
+        @panic("too big transaction");
+    }
+    if (log.outstanding < 1) {
+        @panic("log_write outside of trans");
+    }
+
+    log.lock.acquire();
+    defer log.lock.release();
+    var idx: usize = 0;
+    while (idx < log.lh.n) : (idx += 1) {
+        if (log.lh.block[idx] == b.blockno) {
+            break;
+        }
+    }
+
+    log.lh.block[idx] = b.blockno;
+    if (idx == log.lh.n) {
+        log.lh.n += 1;
+    }
+
+    b.flags |= bio.B_DIRTY;
+}
