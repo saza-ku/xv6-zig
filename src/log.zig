@@ -101,6 +101,18 @@ pub fn end_op() void {
     }
 }
 
+// Copy modified blocks from cache to log.
+fn write_log() void {
+    for (0..log.lh.n) |tail| {
+        var to = bio.buf.read(log.dev, log.start + tail + 1); // log block
+        var from = bio.buf.read(log.dev, log.lh.block[tail]); // cache block
+        @memcpy(to.data, from.data);
+        to.write();
+        to.release();
+        from.release();
+    }
+}
+
 // Caller has modified b->data and is done with the buffer.
 // Record the block number and pin in the cache with B_DIRTY.
 // commit()/write_log() will do the disk write.
