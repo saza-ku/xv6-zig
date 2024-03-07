@@ -59,6 +59,17 @@ pub fn initlog(dev: i32) void {
     // recover_from_log();
 }
 
+fn write_head() void {
+    var buf = bio.buf.read(log.dev, log.start);
+    var hb = @as(*LogHeader, @ptrCast(&buf.data));
+    hb.n = log.lh.n;
+    for (&hb.block, 0..) |*b, i| {
+        b.* = log.lh.block[i];
+    }
+    buf.write();
+    buf.release();
+}
+
 // called at the start of each FS system call.
 pub fn begin_op() void {
     log.lock.acquire();
