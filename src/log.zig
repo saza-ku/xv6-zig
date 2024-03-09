@@ -59,6 +59,21 @@ pub fn initlog(dev: i32) void {
     // recover_from_log();
 }
 
+// Copy committed blocks from log to their home location
+fn install_trans() void {
+    for (0..log.lh.n) |tail| {
+        const log_buf = bio.buf.read(log.dev, log.start + tail + 1);
+        var dst_buf = bio.buf.read(log.dev, log.lh.block[tail]);
+        @memcpy(dst_buf.data, log_buf.data);
+        dst_buf.write();
+        dst_buf.release();
+        log_buf.release();
+    }
+}
+
+// Write in-memory log header to disk.
+// This is the true point at which the
+// current transaction commits.
 fn write_head() void {
     var buf = bio.buf.read(log.dev, log.start);
     var hb = @as(*LogHeader, @ptrCast(&buf.data));
