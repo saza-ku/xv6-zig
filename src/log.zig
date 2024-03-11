@@ -139,6 +139,16 @@ fn write_log() void {
     }
 }
 
+fn commit() void {
+    if (log.lh.n > 0) {
+        write_log();
+        write_head();
+        install_trans();
+        log.lh.n = 0;
+        write_head();
+    }
+}
+
 // Caller has modified b->data and is done with the buffer.
 // Record the block number and pin in the cache with B_DIRTY.
 // commit()/write_log() will do the disk write.
