@@ -71,6 +71,17 @@ fn install_trans() void {
     }
 }
 
+// Read the log header from disk into the in-memory log header
+fn read_head() void {
+    var buf = bio.buf.read(log.dev, log.start);
+    var lh = @as(*LogHeader, @ptrCast(&buf.data));
+    log.lh.n = lh.n;
+    for (&log.lh.block, 0..) |*b, i| {
+        b.* = lh.block[i];
+    }
+    buf.release();
+}
+
 // Write in-memory log header to disk.
 // This is the true point at which the
 // current transaction commits.
@@ -83,6 +94,13 @@ fn write_head() void {
     }
     buf.write();
     buf.release();
+}
+
+pub fn recover_from_log() void {
+    read_head();
+    install_trans(); // if commited, copy from log to disk
+    log.lh.n = 0;
+    write_head(); // clear the log
 }
 
 // called at the start of each FS system call.
