@@ -193,6 +193,35 @@ fn bfree(dev: u32, b: u32) void {
 var icache = struct {
     lock: spinlock.spinlock,
     inode: [param.INODE]inode,
+
+    const Self = @This();
+
+    fn iget(self: *Self, dev: u32, inum: u32) *inode {
+        self.lock.acquire();
+        defer self.lock.release();
+
+        var ip: *inode = undefined;
+        for (self.inode) |*i| {
+            if (i.ref > 0 and i.dev == dev and i.inum == inum) {
+                i.ref += 1;
+                return i;
+            }
+            if (i.ref == 0) {
+                ip = i;
+            }
+        }
+
+        if (ip == undefined) {
+            asm volatile ("1: jmp 1b"); // TODO: error handling
+        }
+
+        ip.dev = dev;
+        ip.inum = inum;
+        ip.ref = 1;
+        ip.valid = false;
+
+        return ip;
+    }
 }{
     .lock = spinlock.spinlock.init("icache"),
     .inode = init: {
@@ -222,31 +251,4 @@ fn ialloc(dev: u32, typ: u16) *inode {
         bp.release();
     }
     asm volatile ("1: jmp 1b"); // TODO: error handling
-}
-
-fn iget(dev: u32, inum: u32) *inode {
-    icache.lock.acquire();
-    defer icache.lock.release();
-
-    var ip: *inode = undefined;
-    for (icache.inode) |*i| {
-        if (i.ref > 0 and i.dev == dev and i.inum == inum) {
-            i.ref += 1;
-            return i;
-        }
-        if (i.ref == 0) {
-            ip = i;
-        }
-    }
-
-    if (ip == undefined) {
-        asm volatile ("1: jmp 1b"); // TODO: error handling
-    }
-
-    ip.dev = dev;
-    ip.inum = inum;
-    ip.ref = 1;
-    ip.valid = false;
-
-    return ip;
 }
