@@ -16,6 +16,8 @@ const sleeplock = @import("sleeplock.zig");
 const spinlock = @import("spinlock.zig");
 const util = @import("util.zig");
 
+const inode = file.inode;
+
 pub const BSIZE = 512;
 
 pub const superblock = struct {
@@ -107,7 +109,7 @@ fn balloc(dev: u32) u32 {
     asm volatile ("1: jmp 1b"); // TODO: error handling
 }
 
-fn brree(dev: u32, b: u32) void {
+fn bfree(dev: u32, b: u32) void {
     var bp = bio.buf.read(dev, bblock(b, sb));
     defer bp.release();
     const bi: u32 = b % BPB;
@@ -189,12 +191,12 @@ fn brree(dev: u32, b: u32) void {
 // read or write that inode's ip->valid, ip->size, ip->type, &c.
 
 var icache = struct {
-    lock: spinlock.spinlocks,
-    inode: [param.INODE]file.inode,
+    lock: spinlock.spinlock,
+    inode: [param.INODE]inode,
 }{
     .lock = spinlock.spinlock.init("icache"),
     .inode = init: {
-        const initial_value: [param.INODE]file.inode = undefined;
+        const initial_value: [param.INODE]inode = undefined;
         for (initial_value) |*i| {
             i.lock = sleeplock.sleeplock.init("inode");
         }
@@ -205,7 +207,7 @@ var icache = struct {
 // Allocate an inode on device dev.
 // Mark it as allocated by  giving it type type.
 // Returns an unlocked but allocated and referenced inode.
-fn ialloc(dev: u32, typ: u16) *file.inode {
+fn ialloc(dev: u32, typ: u16) *inode {
     var inum: u32 = 1;
     while (inum < sb.ninodes) : (inum += 1) {
         var bp = bio.buf.read(dev, iblock(inum, sb));
@@ -220,4 +222,31 @@ fn ialloc(dev: u32, typ: u16) *file.inode {
         bp.release();
     }
     asm volatile ("1: jmp 1b"); // TODO: error handling
+}
+
+fn iget(dev: u32, inum: u32) *inode {
+    icache.lock.acquire();
+    defer icache.lock.release();
+
+    var ip: *inode = undefined;
+    for (icache.inode) |*i| {
+        if (i.ref > 0 and i.dev == dev and i.inum == inum) {
+            i.ref += 1;
+            return i;
+        }
+        if (i.ref == 0) {
+            ip = i;
+        }
+    }
+
+    if (ip == undefined) {
+        asm volatile ("1: jmp 1b"); // TODO: error handling
+    }
+
+    ip.dev = dev;
+    ip.inum = inum;
+    ip.ref = 1;
+    ip.valid = false;
+
+    return ip;
 }

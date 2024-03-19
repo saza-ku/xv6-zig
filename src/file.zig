@@ -19,7 +19,7 @@ pub const inode = struct {
     inum: u32, // // Inode number
     ref: u32, // Reference count
     lock: sleeplock.sleeplock, // protects everything below here
-    valid: u32, // inode has been read from disk?
+    valid: bool, // inode has been read from disk?
 
     typ: u16, // copy of disk inode
     major: u16,
