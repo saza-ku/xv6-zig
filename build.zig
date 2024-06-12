@@ -54,25 +54,10 @@ pub fn build(b: *Builder) void {
 
     kernel.step.dependOn(build_initcode_step);
 
-    const iso_dir = "./zig-cache/iso_root";
-    const boot_dir = "./zig-cache/iso_root/boot";
-    const grub_dir = "./zig-cache/iso_root/boot/grub";
-    const kernel_path = std.fmt.allocPrint(std.heap.page_allocator, "./zig-out/bin/{s}", .{kernel.out_filename}) catch unreachable;
-    const iso_path = b.fmt("{s}/disk.iso", .{b.exe_dir});
-
-    const iso_cmd_str = &[_][]const u8{ "/bin/sh", "-c", std.mem.concat(b.allocator, u8, &[_][]const u8{ "mkdir -p ", grub_dir, " && ", "cp ", kernel_path, " ", boot_dir, " && ", "cp grub.cfg ", grub_dir, " && ", "grub-mkrescue -o ", iso_path, " ", iso_dir }) catch unreachable };
-
-    const iso_cmd = b.addSystemCommand(iso_cmd_str);
-    iso_cmd.step.dependOn(kernel_step);
-
-    const iso_step = b.step("iso", "Build an ISO image");
-    iso_step.dependOn(&iso_cmd.step);
-    b.default_step.dependOn(iso_step);
-
     const run_cmd_str = [_][]const u8{
         "qemu-system-i386",
-        "-drive",
-        "file=zig-out/bin/disk.iso,index=0,media=disk,format=raw",
+        "-kernel",
+        "zig-out/bin/kernel.elf",
         "-m",
         "512",
         "-smp",
