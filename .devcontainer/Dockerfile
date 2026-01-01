@@ -8,7 +8,7 @@ ARG ZIG_VERSION="0.16.0-dev.1859+212968c57"
 ARG TARGETARCH
 
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive && \
-    apt-get -y install --no-install-recommends git nasm build-essential qemu qemu-system qemu-system-common qemu-utils qemu-system-gui xorriso gdb grub-common
+    apt-get -y install --no-install-recommends git nasm build-essential qemu qemu-system qemu-system-common qemu-utils qemu-system-gui xorriso gdb grub-common binutils-i686-linux-gnu
 
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
       ZIG_ARCH=x86_64; \
