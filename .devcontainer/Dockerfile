@@ -5,14 +5,25 @@ ARG VARIANT="jammy"
 FROM mcr.microsoft.com/vscode/devcontainers/base:0-${VARIANT}
 
 ARG ZIG_VERSION="0.16.0-dev.1859+212968c57"
+ARG TARGETARCH
 
-# [Optional] Uncomment this section to install additional OS packages.
-RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get -y install --no-install-recommends git nasm build-essential qemu qemu-system qemu-system-common qemu-utils qemu-system-gui xorriso gdb grub-common
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive && \
+    apt-get -y install --no-install-recommends git nasm build-essential qemu qemu-system qemu-system-common qemu-utils qemu-system-gui xorriso gdb grub-common
 
-RUN curl -L https://ziglang.org/builds/zig-x86_64-linux-${ZIG_VERSION}.tar.xz -o zig.tar.xz \
-    && mkdir -p /usr/src \
-    && tar xf zig.tar.xz -C /usr/src \
-    && mv /usr/src/zig-x86_64-linux-${ZIG_VERSION} /usr/src/zig
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+      ZIG_ARCH=x86_64; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+      ZIG_ARCH=aarch64; \
+    else \
+      echo "Unsupported architecture: $TARGETARCH"; exit 1; \
+    fi && \
+    echo "ZIG_ARCH=$ZIG_ARCH" > /tmp/zig_arch.sh
+
+RUN . /tmp/zig_arch.sh && \
+    curl -L https://ziglang.org/builds/zig-${ZIG_ARCH}-linux-${ZIG_VERSION}.tar.xz -o zig.tar.xz && \
+    mkdir -p /usr/src && \
+    tar xf zig.tar.xz -C /usr/src && \
+    mv /usr/src/zig-${ZIG_ARCH}-linux-${ZIG_VERSION} /usr/src/zig && \
+    rm -f zig.tar.xz /tmp/zig_arch.sh
 
 ENV PATH /usr/src/zig:$PATH
