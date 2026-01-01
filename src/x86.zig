@@ -27,7 +27,7 @@ pub fn insl(port: u16, addr: usize, cnt: u32) void {
         : [c] "d" (port),
           [d] "0" (addr),
           [e] "1" (cnt),
-        : "memory", "cc"
+        : "memory"
     );
 }
 
