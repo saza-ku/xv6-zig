@@ -46,26 +46,25 @@ const mp = packed struct {
 };
 
 const mpconf = packed struct {
-    signature1: u8,
-    signature2: u8,
-    signature3: u8,
-    signature4: u8,
+    signature1: u8, // "P"
+    signature2: u8, // "C"
+    signature3: u8, // "M"
+    signature4: u8, // "P"
     length: u16,
     version: u8,
     checksum: u8,
-    oemid: u64,        // OEM ID (8 bytes)
-    productid: u96,    // Product ID (12 bytes)
-    oemtable: u32,     // OEM table pointer
+    product_data: u160,
+    oemtable: u32,
     oemlength: u16,
     entry: u16,
-    lapicaddr: u32,    // local APIC address
+    lapicaddr: u32,
     xlength: u16,
     xchecksum: u8,
     reserved: u8,
 
     const Self = @This();
 
-    fn isValid(self: *Self) bool {
+    fn isValid(self: *const Self) bool {
         if (self.signature1 != 'P' or
             self.signature2 != 'C' or
             self.signature3 != 'M' or
@@ -81,8 +80,8 @@ const mpconf = packed struct {
         // checksum
         const bytes = @as([*]const u8, @ptrCast(self))[0..self.length];
         var sum: u8 = 0;
-        for (bytes) |*b| {
-            sum = sum +% b.*;
+        for (bytes) |b| {
+            sum = sum +% b;
         }
 
         return sum == 0;
@@ -90,8 +89,8 @@ const mpconf = packed struct {
 };
 
 // processor table entry
-const mpproc = packed struct {
-    typ: entry, // entry type (0)
+const mpproc = extern struct {
+    typ: u8, // entry type (0)
     apicid: u8, // local APIC id
     version: u8, // local APIC version
     flags: u8, // CPU flags
@@ -101,22 +100,19 @@ const mpproc = packed struct {
 };
 
 // I/O APIC table entry
-const mpioapic = packed struct {
-    typ: entry, // entry type (2)
+const mpioapic = extern struct {
+    typ: u8, // entry type (2)
     apicno: u8, // I/O APIC id
     version: u8, // I/O APIC version
     flags: u8, // I/O APIC flags
     addr: u32, // I/O APIC address
 };
 
-// Non-exhaustive enum may be better
-const entry = enum(u8) {
-    MPPROC = 0x00,
-    MPBUS = 0x01,
-    MPIOAPIC = 0x02,
-    MPIOINTR = 0x03,
-    MPLINTR = 0x04,
-};
+const MPPROC = 0x00;
+const MPBUS = 0x01;
+const MPIOAPIC = 0x02;
+const MPIOINTR = 0x03;
+const MPLINTR = 0x04;
 
 // Look for an MP structure in the len bytes at addr
 fn mpsearch1(a: usize, len: usize) ?*mp {
@@ -165,7 +161,7 @@ fn mpconfig(p: **mp) ?*mpconf {
         return null;
     }
 
-    var conf = @as(*mpconf, @ptrFromInt(memlayout.p2v(pmp.physaddr)));
+    const conf = @as(*mpconf, @ptrFromInt(memlayout.p2v(pmp.physaddr)));
     if (!conf.isValid()) {
         return null;
     }
@@ -180,14 +176,16 @@ pub fn mpinit() void {
     var pmp: *mp = undefined;
     const conf = mpconfig(&pmp) orelse return; // TODO: panic if null
 
-    lapic.lapic = @as([*]u32, @ptrFromInt(memlayout.p2v(conf.lapicaddr)));
+    // LAPIC is in DEVSPACE (0xFE000000+), which is identity-mapped
+    lapic.lapic = @as([*]u32, @ptrFromInt(conf.lapicaddr));
 
     var p = @intFromPtr(conf) + @sizeOf(mpconf);
     const e = @intFromPtr(conf) + conf.length;
     while (p < e) {
-        const typ = @as(entry, @enumFromInt(@as(*u8, @ptrFromInt(p)).*));
+        const typ = @as(*u8, @ptrFromInt(p)).*;
+
         switch (typ) {
-            .MPPROC => {
+            MPPROC => { // MPPROC
                 const proc_entry = @as(*mpproc, @ptrFromInt(p));
                 if (ncpu < param.NCPU) {
                     cpus[ncpu].apicid = proc_entry.apicid;
@@ -195,12 +193,16 @@ pub fn mpinit() void {
                 }
                 p += @sizeOf(mpproc);
             },
-            .MPIOAPIC => {
+            MPIOAPIC => { // MPIOAPIC
                 const ioapic_entry = @as(*mpioapic, @ptrFromInt(p));
                 ioapicid = ioapic_entry.apicno;
                 p += @sizeOf(mpioapic);
             },
-            .MPBUS, .MPIOINTR, .MPLINTR => {
+            MPBUS, MPIOINTR, MPLINTR => { // MPBUS, MPIOINTR, MPLINTR
+                p += 8;
+            },
+            else => {
+                // Unknown entry type, skip 8 bytes
                 p += 8;
             },
         }
