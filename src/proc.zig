@@ -211,7 +211,7 @@ pub fn sleep(chan: usize, lk: *spinlock.spinlock) void {
     p.*.chan = chan;
     p.*.state = procstate.SLEEPING;
 
-    // TODO: sched();
+    sched();
 
     // Tidy up
     p.*.chan = 0;
