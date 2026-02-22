@@ -53,11 +53,12 @@ const mpconf = packed struct {
     length: u16,
     version: u8,
     checksum: u8,
-    product: u160,
-    oemtable: *u32,
+    oemid: u64,        // OEM ID (8 bytes)
+    productid: u96,    // Product ID (12 bytes)
+    oemtable: u32,     // OEM table pointer
     oemlength: u16,
     entry: u16,
-    lapicaddr: [*]u32,
+    lapicaddr: u32,    // local APIC address
     xlength: u16,
     xchecksum: u8,
     reserved: u8,
@@ -105,7 +106,7 @@ const mpioapic = packed struct {
     apicno: u8, // I/O APIC id
     version: u8, // I/O APIC version
     flags: u8, // I/O APIC flags
-    addr: *u32, // I/O APIC address
+    addr: u32, // I/O APIC address
 };
 
 // Non-exhaustive enum may be better
@@ -179,7 +180,7 @@ pub fn mpinit() void {
     var pmp: *mp = undefined;
     const conf = mpconfig(&pmp) orelse return; // TODO: panic if null
 
-    lapic.lapic = conf.lapicaddr;
+    lapic.lapic = @as([*]u32, @ptrFromInt(memlayout.p2v(conf.lapicaddr)));
 
     var p = @intFromPtr(conf) + @sizeOf(mpconf);
     const e = @intFromPtr(conf) + conf.length;
