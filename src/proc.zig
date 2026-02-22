@@ -114,7 +114,7 @@ pub fn mycpu() *cpu {
 
 // Disable interrupts so that we are not rescheduled
 // while reading proc from the cpu structure
-pub fn myproc() *proc {
+pub fn myproc() ?*proc {
     spinlock.pushcli();
     const c = mycpu();
     const p = c.proc;
@@ -293,10 +293,50 @@ pub fn scheduler() void {
             x86.swtch(&c.scheduler, p.context);
             vm.switchkvm();
 
+            console.printf("back to scheduler\n", .{});
+
             // Process is done running for now.
             // It should have changed its p->state before coming back.
             c.proc = null;
         }
         ptable.lock.release();
     }
+}
+
+// Enter scheduler.  Must hold only ptable.lock
+// and have changed proc->state. Saves and restores
+// intena because intena is a property of this
+// kernel thread, not this CPU. It should
+// be proc->intena and proc->ncli, but that would
+// break in the few places where a lock is held but
+// there's no process.
+fn sched() void {
+    const c = mycpu();
+    const p = myproc() orelse @panic("sched: no process");
+
+    if (!ptable.lock.hoding()) {
+        @panic("sched ptable.lock");
+    }
+    if (c.ncli != 1) {
+        @panic("sched locks");
+    }
+    if (p.state == procstate.RUNNING) {
+        @panic("shced running");
+    }
+    if (x86.readeflags() & mmu.FL_IF != 0) {
+        @panic("sched interruptible");
+    }
+
+    const intena = c.intena;
+    x86.swtch(&p.context, c.scheduler);
+    c.intena = intena;
+}
+
+// Give up the CPU for one scheduling round.
+pub fn yield() void {
+    const p = myproc() orelse @panic("yield: no process");
+    ptable.lock.acquire();
+    p.*.state = procstate.RUNNABLE;
+    sched();
+    ptable.lock.release();
 }

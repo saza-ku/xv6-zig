@@ -58,18 +58,22 @@ pub fn idtinit() void {
 }
 
 export fn trap(tf: *x86.trapframe) void {
+    // print current sp
+    const sp = asm volatile ("movl %%esp, %[sp]"
+        : [sp] "={eax}" (-> usize),
+    );
+    const c = proc.mycpu();
+    console.printf("trap: {} sp = {x}, original sp = {x}, original eip = {x}, scheduler context sp = {x}\n", .{ tf.trapno, sp, tf.esp, tf.eip, @intFromPtr(c.scheduler) });
+
     if (tf.trapno == T_SYSCALL) {
         // TODO: system call
-        console.printf("syscall\n", .{});
+        return;
     }
 
     switch (tf.trapno) {
         T_IRQ0 + IRQ_TIMER => {
             tickslock.acquire();
             ticks += 1;
-            if (ticks == 10) {
-                console.printf("ticks = {}", .{ticks});
-            }
             proc.wakeup(@intFromPtr(&ticks));
             tickslock.release();
             lapic.lapiceoi();
@@ -99,7 +103,12 @@ export fn trap(tf: *x86.trapframe) void {
         },
     }
 
-    // TODO: implement
+    const myproc = proc.myproc();
+    if (myproc) |p| {
+        if (p.state == proc.procstate.RUNNING and tf.trapno == T_IRQ0 + IRQ_TIMER) {
+            proc.yield();
+        }
+    }
 }
 
 fn panicHandler(tf: *x86.trapframe) void {
