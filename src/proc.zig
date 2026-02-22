@@ -149,7 +149,7 @@ pub fn allocproc() ?*proc {
 
             // Set up new context to start executing at forkret, which returns to trapret.
             sp -= 4;
-            const trapret_pointer = @as(**const fn () callconv(.C) void, @ptrFromInt(sp));
+            const trapret_pointer = @as(**const fn () callconv(.c) void, @ptrFromInt(sp));
             trapret_pointer.* = trapret;
 
             sp -= @sizeOf(context);
@@ -170,7 +170,7 @@ pub fn userinit() void {
     initproc = p;
     p.*.pgdir = vm.setupkvm() orelse @panic("usetinit: out of memory?");
 
-    vm.inituvm(p.pgdir, @as([*]u8, @ptrCast(&_binary_zig_out_bin_initcode_start)), @intFromPtr(&_binary_zig_out_bin_initcode_size));
+    vm.inituvm(p.pgdir, @as([*]u8, @ptrCast(@constCast(&_binary_zig_out_bin_initcode_start))), @intFromPtr(&_binary_zig_out_bin_initcode_size));
     p.*.sz = mmu.PGSIZE;
     @memset(@as([*]u8, @ptrCast(p.*.tf))[0..@sizeOf(x86.trapframe)], 0);
     p.*.tf.cs = (mmu.SEG_UCODE << 3) | mmu.DPL_USER;
@@ -223,7 +223,7 @@ pub fn sleep(chan: usize, lk: *spinlock.spinlock) void {
     }
 }
 
-fn forkret() callconv(.C) void {
+fn forkret() callconv(.c) void {
     const S = struct {
         var first: bool = true;
     };

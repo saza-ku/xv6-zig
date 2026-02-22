@@ -268,8 +268,6 @@ pub fn puts(data: []const u8) void {
     }
 }
 
-pub const writer = Writer(void, error{}, callback){ .context = {} };
-
 fn callback(_: void, string: []const u8) error{}!usize {
     puts(string);
     return string.len;
@@ -278,11 +276,22 @@ fn callback(_: void, string: []const u8) error{}!usize {
 /// The errors that can occur when logging
 const LoggingError = error{};
 
-/// The Writer for the format function
-const Writer = std.io.Writer(void, LoggingError, logCallback);
-
 pub fn printf(comptime format: []const u8, args: anytype) void {
-    fmt.format(Writer{ .context = {} }, format, args) catch unreachable;
+    // Use a custom writer context
+    const Context = struct {
+        fn write(context: void, bytes: []const u8) LoggingError!usize {
+            _ = context;
+            puts(bytes);
+            for (bytes) |c| {
+                uart.putc(c);
+            }
+            return bytes.len;
+        }
+    };
+
+    var buf: [1024]u8 = undefined;
+    const result = std.fmt.bufPrint(&buf, format, args) catch unreachable;
+    _ = Context.write({}, result) catch unreachable;
 }
 
 fn logCallback(context: void, str: []const u8) LoggingError!usize {

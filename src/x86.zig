@@ -1,6 +1,6 @@
 const proc = @import("proc.zig");
 
-pub extern fn swtch(old: **proc.context, new: *proc.context) callconv(.C) void;
+pub extern fn swtch(old: **proc.context, new: *proc.context) callconv(.c) void;
 
 pub fn in(comptime Type: type, port: u16) Type {
     return switch (Type) {
@@ -27,8 +27,7 @@ pub fn insl(port: u16, addr: usize, cnt: u32) void {
         : [c] "d" (port),
           [d] "0" (addr),
           [e] "1" (cnt),
-        : "memory", "cc"
-    );
+        : .{ .memory = true, .cc = true });
 }
 
 pub fn out(port: u16, data: anytype) void {
@@ -59,8 +58,7 @@ pub fn outsl(port: u16, addr: usize, cnt: u32) void {
         : [c] "d" (port),
           [d] "0" (addr),
           [f] "1" (cnt),
-        : "cc"
-    );
+        : .{ .memory = true, .cc = true });
 }
 
 pub fn lgdt(p: usize, size: u16) void {
@@ -120,8 +118,7 @@ pub fn xchg(addr: *u32, newval: u32) u32 {
         : [result] "={eax}" (-> u32),
         : [addr] "r" (addr),
           [newval] "{eax}" (newval),
-        : "memory"
-    );
+        : .{ .memory = true });
 }
 
 // Layout of the trap frame built on the stack by the

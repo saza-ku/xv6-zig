@@ -44,7 +44,7 @@ var tickslock = spinlock.spinlock.init("time");
 pub var ticks: u32 = 0;
 
 pub fn tvinit() void {
-    const v = @as([*]u32, @ptrCast(&vectors));
+    const v = @as([*]u32, @ptrCast(@constCast(&vectors)));
 
     var i: u32 = 0;
     while (i < 256) : (i += 1) {

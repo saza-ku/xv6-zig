@@ -49,7 +49,7 @@ export fn main() noreturn {
 fn mpmain() void {
     console.printf("cpu{}: starting {}\n", .{ proc.cpuid(), proc.cpuid() });
     trap.idtinit();
-    @atomicStore(bool, &proc.mycpu().started, true, std.builtin.AtomicOrder.SeqCst);
+    @atomicStore(bool, &proc.mycpu().started, true, .seq_cst);
     proc.scheduler();
 }
 

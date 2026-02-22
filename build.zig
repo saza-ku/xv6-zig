@@ -1,16 +1,12 @@
 const std = @import("std");
-const Builder = @import("std").build.Builder;
-const Target = @import("std").Target;
-const CrossTarget = @import("std").zig.CrossTarget;
-const Feature = @import("std").Target.Cpu.Feature;
 
 const objFiles = [_][]u8{"main"};
 
-pub fn build(b: *Builder) void {
-    const features = Target.x86.Feature;
+pub fn build(b: *std.Build) void {
+    const features = std.Target.x86.Feature;
 
-    var disabled_features = Feature.Set.empty;
-    var enabled_features = Feature.Set.empty;
+    var disabled_features = std.Target.Cpu.Feature.Set.empty;
+    var enabled_features = std.Target.Cpu.Feature.Set.empty;
 
     disabled_features.addFeature(@intFromEnum(features.mmx));
     disabled_features.addFeature(@intFromEnum(features.sse));
@@ -19,34 +15,37 @@ pub fn build(b: *Builder) void {
     disabled_features.addFeature(@intFromEnum(features.avx2));
     enabled_features.addFeature(@intFromEnum(features.soft_float));
 
-    const target = CrossTarget{ .cpu_arch = Target.Cpu.Arch.x86, .os_tag = Target.Os.Tag.freestanding, .cpu_features_sub = disabled_features, .cpu_features_add = enabled_features };
+    const target = b.resolveTargetQuery(.{
+        .cpu_arch = .x86,
+        .os_tag = .freestanding,
+        .cpu_features_sub = disabled_features,
+        .cpu_features_add = enabled_features,
+    });
 
     const optimize = b.standardOptimizeOption(.{});
 
     const build_initcode_step = buildInitcode(b);
 
-    // objects for assembly
-    const main_obj = b.addObject(std.Build.ObjectOptions{
-        .name = "main",
-        .root_source_file = .{ .path = "src/main.zig" },
+    const kernel_module = b.addModule("kernel", .{
+        .root_source_file = b.path("src/entry.zig"),
         .target = target,
         .optimize = optimize,
     });
 
     const kernel = b.addExecutable(.{
         .name = "kernel.elf",
-        .root_source_file = .{ .path = "src/entry.zig" },
-        .optimize = optimize,
-        .target = target,
-        .linkage = std.build.CompileStep.Linkage.static,
+        .root_module = kernel_module,
+        .linkage = .static,
     });
-    kernel.setLinkerScriptPath(.{ .path = "src/kernel.ld" });
-    kernel.addAssemblyFile(.{ .path = "src/trapasm.S" });
-    kernel.addAssemblyFile(.{ .path = "src/vector.S" });
-    kernel.addAssemblyFile(.{ .path = "src/swtch.S" });
-    kernel.addObject(main_obj);
-    kernel.addObjectFile(.{ .path = "zig-out/bin/initcode.o" });
-    kernel.code_model = .kernel;
+    kernel.setLinkerScript(b.path("src/kernel.ld"));
+    kernel.root_module.addAssemblyFile(b.path("src/trapasm.S"));
+    kernel.root_module.addAssemblyFile(b.path("src/vector.S"));
+    kernel.root_module.addAssemblyFile(b.path("src/swtch.S"));
+    kernel.root_module.addAnonymousImport("main", .{
+        .root_source_file = b.path("src/main.zig"),
+    });
+    kernel.root_module.addObjectFile(b.path("zig-out/bin/initcode.o"));
+    kernel.root_module.code_model = .kernel;
     b.installArtifact(kernel);
 
     const kernel_step = b.step("kernel", "Build the kernel");
@@ -101,7 +100,7 @@ pub fn build(b: *Builder) void {
     debug_step.dependOn(&debug_cmd.step);
 }
 
-fn buildInitcode(b: *Builder) *std.Build.Step {
+fn buildInitcode(b: *std.Build) *std.Build.Step {
     const build_initcode_command = b.addSystemCommand(&[_][]const u8{"./scripts/build_initcode.sh"});
     return &build_initcode_command.step;
 }
